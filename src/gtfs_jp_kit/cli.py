@@ -6,7 +6,7 @@ import argparse
 import json
 import sys
 
-from . import __version__, render
+from . import __version__, html, render
 from .calendar import DAY_TYPES, parse_date
 from .checks import run_checks
 from .feed import load_feed
@@ -76,7 +76,9 @@ def _cmd_timetable_stop(args: argparse.Namespace) -> int:
     except KeyError as e:
         print(e.args[0], file=sys.stderr)
         return 2
-    if args.format == "md":
+    if args.format == "html":
+        sys.stdout.write(html.stop_html(tt, args.lang))
+    elif args.format == "md":
         sys.stdout.write(render.stop_markdown(tt, args.lang))
     elif args.format == "csv":
         sys.stdout.write(render.stop_csv(tt))
@@ -102,7 +104,14 @@ def _cmd_timetable_route(args: argparse.Namespace) -> int:
     except KeyError as e:
         print(e.args[0], file=sys.stderr)
         return 2
-    if args.format == "md":
+    if args.format == "html":
+        route = feed["routes"].index("route_id")[args.route]
+        sys.stdout.write(
+            html.route_html(
+                rt, args.lang, route.get("route_color", ""), route.get("route_text_color", "")
+            )
+        )
+    elif args.format == "md":
         sys.stdout.write(render.route_markdown(rt, args.lang))
     elif args.format == "csv":
         sys.stdout.write(render.route_csv(rt))
@@ -141,7 +150,7 @@ def build_parser() -> argparse.ArgumentParser:
     ts.add_argument("--date", help="one service date (YYYYMMDD); default: regular day types")
     ts.add_argument("--days", default=",".join(DAY_TYPES), help="weekday,saturday,sunday")
     ts.add_argument("--route", action="append", help="only this route_id (repeatable)")
-    ts.add_argument("--format", choices=["text", "md", "csv"], default="text")
+    ts.add_argument("--format", choices=["text", "md", "csv", "html"], default="text")
     ts.add_argument("--lang", choices=["en", "ja"], default="en")
     ts.set_defaults(func=_cmd_timetable_stop)
 
@@ -151,7 +160,7 @@ def build_parser() -> argparse.ArgumentParser:
     tr.add_argument("--direction", choices=["0", "1"])
     tr.add_argument("--date", help="one service date (YYYYMMDD)")
     tr.add_argument("--day", default="weekday", help="weekday, saturday or sunday")
-    tr.add_argument("--format", choices=["text", "md", "csv"], default="text")
+    tr.add_argument("--format", choices=["text", "md", "csv", "html"], default="text")
     tr.add_argument("--lang", choices=["en", "ja"], default="en")
     tr.set_defaults(func=_cmd_timetable_route)
     return p

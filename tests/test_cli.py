@@ -39,3 +39,9 @@ def test_timetable_stop(capsys):
     assert "| Hour | Weekdays |" in capsys.readouterr().out
     assert main(["timetable", "stop", str(FIXTURE), "nowhere"]) == 2
     assert main(["timetable", "stop", str(FIXTURE), "ST_SHI", "--days", "holiday"]) == 2
+
+
+def test_timetable_html(capsys):
+    assert main(["timetable", "route", str(FIXTURE), "R2", "--format", "html"]) == 0
+    assert capsys.readouterr().out.startswith("<!doctype html>")
+    assert main(["timetable", "stop", str(FIXTURE), "ST_DAN", "--format", "html"]) == 0
