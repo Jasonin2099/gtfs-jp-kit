@@ -1,0 +1,5 @@
+service_id,date,exception_type
+WD,20261103,2
+SU,20261103,1
+WD,20261123,2
+SU,20261123,1

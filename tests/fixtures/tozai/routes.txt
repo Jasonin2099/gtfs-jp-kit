@@ -1,0 +1,3 @@
+route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color
+R1,5000020999990,1,東西駅前～市民病院,3,1E6FB8,FFFFFF
+R2,5000020999990,2,東西駅前～みどり団地,3,2E8B57,FFFFFF

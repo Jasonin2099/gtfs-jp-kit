@@ -1,0 +1,7 @@
+stop_id,stop_name,stop_lat,stop_lon,zone_id,location_type,parent_station,platform_code
+ST_EKI,東西駅前,36.1000,138.2500,,1,,
+ST_EKI_1,東西駅前,36.1001,138.2501,Z1,0,ST_EKI,1
+ST_EKI_2,東西駅前,36.1002,138.2502,Z1,0,ST_EKI,2
+ST_SHI,市役所前,36.1050,138.2550,Z1,0,,
+ST_BYO,市民病院,36.1100,138.2600,Z1,0,,
+ST_DAN,みどり団地,34.3950,138.2400,Z1,0,,

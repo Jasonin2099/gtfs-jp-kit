@@ -1,0 +1,2 @@
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone
+5000020999990,東西市コミュニティバス,https://example.jp/tozai/bus,Asia/Tokyo,ja,000-000-0000

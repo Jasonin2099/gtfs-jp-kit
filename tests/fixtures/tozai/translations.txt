@@ -1,0 +1,21 @@
+table_name,field_name,language,translation,record_id,record_sub_id,field_value
+agency,agency_name,ja-Hrkt,とうざいしこみゅにてぃばす,5000020999990,,
+agency,agency_name,en,Tozai City Community Bus,5000020999990,,
+stops,stop_name,ja-Hrkt,とうざいえきまえ,,,東西駅前
+stops,stop_name,en,Tozai Station,,,東西駅前
+stops,stop_name,ja-Hrkt,しやくしょまえ,,,市役所前
+stops,stop_name,en,Shiyakusho-mae,,,市役所前
+stops,stop_name,ja-Hrkt,しみんびょういん,,,市民病院
+stops,stop_name,en,Shimin Byoin,,,市民病院
+stops,stop_name,ja-Hrkt,みどりだんち,,,みどり団地
+stops,stop_name,en,Midori Danchi,,,みどり団地
+routes,route_long_name,ja-Hrkt,とうざいえきまえ～しみんびょういん,R1,,
+routes,route_long_name,en,Tozai Sta. - Shimin Byoin,R1,,
+routes,route_long_name,ja-Hrkt,とうざいえきまえ～みどりだんち,R2,,
+routes,route_long_name,en,Tozai Sta. - Midori Danchi,R2,,
+trips,trip_headsign,ja-Hrkt,しみんびょういん,,,市民病院
+trips,trip_headsign,en,Shimin Byoin,,,市民病院
+trips,trip_headsign,ja-Hrkt,とうざいえきまえ,,,東西駅前
+trips,trip_headsign,en,Tozai Station,,,東西駅前
+trips,trip_headsign,ja-Hrkt,みどりだんち,,,みどり団地
+trips,trip_headsign,en,Midori Danchi,,,みどり団地

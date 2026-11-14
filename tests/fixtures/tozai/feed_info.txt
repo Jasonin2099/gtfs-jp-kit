@@ -1,0 +1,2 @@
+feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version,feed_contact_email
+東西市,https://example.jp/tozai/bus,ja,20261001,20270331,2026.10.01_v1,bus@example.jp
