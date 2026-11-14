@@ -45,3 +45,12 @@ def test_timetable_html(capsys):
     assert main(["timetable", "route", str(FIXTURE), "R2", "--format", "html"]) == 0
     assert capsys.readouterr().out.startswith("<!doctype html>")
     assert main(["timetable", "stop", str(FIXTURE), "ST_DAN", "--format", "html"]) == 0
+
+
+def test_check_markdown(tmp_path, capsys):
+    (tmp_path / "agency.txt").write_text("agency_id,agency_name\nA,バス|線\n", encoding="utf-8")
+    assert main(["check", str(tmp_path), "--format", "markdown", "--lang", "ja"]) == 1
+    out = capsys.readouterr().out
+    assert out.startswith("### GTFS-JP チェック結果")
+    assert "| 重要度 | コード | 場所 | 内容 |" in out
+    assert "| error | `missing-required-file` | stops.txt |" in out

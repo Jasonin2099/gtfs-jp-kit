@@ -24,7 +24,7 @@ Small, self-contained items. Each one should be a single pull request with tests
 - [ ] Flex (任意): note that Google 乗換案内 does not accept Flex files (as of 2025-12)
 - [ ] `--select` to run only some rule groups
 - [ ] SARIF output for GitHub code scanning
-- [ ] Markdown report output for pull request comments
+- [x] Markdown report output for pull request comments
 
 ## Timetables
 

@@ -43,7 +43,7 @@ $ gtfs-jp timetable stop feed.zip 東西駅前 --format md --lang ja
 ## Usage
 
 ```console
-gtfs-jp check FEED [--lang en|ja] [--format text|json] [--min-severity info|warning|error]
+gtfs-jp check FEED [--lang en|ja] [--format text|json|markdown] [--min-severity info|warning|error]
                    [--ignore CODE,CODE] [--strict]
 gtfs-jp info FEED [--lang en|ja] [--format text|json]
 gtfs-jp timetable stop FEED STOP [--date YYYYMMDD | --days weekday,saturday,sunday]
@@ -59,6 +59,13 @@ Times after midnight keep GTFS service-day hours (24:30) by default;
 `FEED` is a GTFS zip or a directory. `STOP` is a stop_id, a station
 (its platforms are included) or an exact stop_name. `check` exits with 1 when
 there are errors (or warnings with `--strict`), so it can gate CI.
+
+In GitHub Actions, the Markdown report can go straight into the job summary:
+
+```yaml
+- run: pip install git+https://github.com/Jasonin2099/gtfs-jp-kit
+- run: gtfs-jp check gtfs/ --lang ja --format markdown >> "$GITHUB_STEP_SUMMARY"
+```
 
 Every check code is listed in [docs/rules.md](docs/rules.md) with the part of
 the specification it comes from.

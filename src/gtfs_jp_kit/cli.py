@@ -11,7 +11,7 @@ from .calendar import DAY_TYPES, parse_date
 from .checks import run_checks
 from .diff import feed_diff, render_feed_diff, render_stop_diff, stop_diff
 from .feed import load_feed
-from .findings import summarize
+from .findings import markdown_report, summarize
 from .info import render as render_info
 from .info import summary
 from .route_timetable import route_timetable
@@ -37,6 +37,8 @@ def _cmd_check(args: argparse.Namespace) -> int:
             indent=2,
         )
         sys.stdout.write("\n")
+    elif args.format == "markdown":
+        sys.stdout.write(markdown_report(findings, args.lang))
     else:
         for f in findings:
             print(f.text(args.lang))
@@ -143,7 +145,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     c = sub.add_parser("check", help="check a feed against the GTFS-JP v4 profile")
     c.add_argument("feed", help="GTFS zip file or directory")
-    c.add_argument("--format", choices=["text", "json"], default="text")
+    c.add_argument("--format", choices=["text", "json", "markdown"], default="text")
     c.add_argument("--lang", choices=["en", "ja"], default="en", help="message language")
     c.add_argument(
         "--min-severity", choices=["info", "warning", "error"], default="info", dest="min_severity"
