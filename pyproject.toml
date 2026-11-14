@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gtfs-jp-kit"
+version = "0.1.0.dev0"
+description = "GTFS-JP (Japan) profile checks and Japanese-style timetables for GTFS feeds, in pure Python."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = []
+keywords = ["gtfs", "gtfs-jp", "japan", "transit", "timetable", "bus", "validator"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Natural Language :: Japanese",
+  "Natural Language :: English",
+  "Topic :: Scientific/Engineering :: GIS",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff>=0.5"]
+
+[project.urls]
+Homepage = "https://github.com/Jasonin2099/gtfs-jp-kit"
+
+[project.scripts]
+gtfs-jp = "gtfs_jp_kit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+gtfs_jp_kit = ["py.typed"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
