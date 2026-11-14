@@ -20,7 +20,7 @@ def stop_markdown(tt: StopTimetable, lang: str = "en") -> str:
     lines.append("|---:|" + "|".join(":---" for _ in tt.columns) + "|")
     for h in tt.hours:
         cells = [" ".join(tt.cell(c, h)) for c in tt.columns]
-        lines.append("| " + " | ".join([str(h), *map(_md_escape, cells)]) + " |")
+        lines.append("| " + " | ".join([tt.hour_label(h), *map(_md_escape, cells)]) + " |")
     legend = tt.legend(lang)
     if legend:
         lines.append("")
@@ -35,7 +35,7 @@ def stop_text(tt: StopTimetable, lang: str = "en") -> str:
         for h in tt.hours:
             cell = tt.cell(c, h)
             if cell:
-                out.append(f"{h:>3} | " + " ".join(cell))
+                out.append(f"{tt.hour_label(h):>3} | " + " ".join(cell))
     legend = tt.legend(lang)
     if legend:
         out.append("")
@@ -49,7 +49,9 @@ def stop_csv(tt: StopTimetable) -> str:
     w.writerow(["column", "time", "route", "headsign", "symbol", "stop_id", "trip_id"])
     for c in tt.columns:
         for d in tt.departures[c]:
-            w.writerow([c, d.hhmm, d.route_name, d.headsign, d.symbol, d.stop_id, d.trip_id])
+            w.writerow(
+                [c, tt.time_label(d), d.route_name, d.headsign, d.symbol, d.stop_id, d.trip_id]
+            )
     return buf.getvalue()
 
 

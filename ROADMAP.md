@@ -28,7 +28,7 @@ Small, self-contained items. Each one should be a single pull request with tests
 
 ## Timetables
 
-- [ ] Option to show 24:xx / 25:xx as 0:xx / 1:xx (next day)
+- [x] Option to show 24:xx / 25:xx as 0:xx / 1:xx (next day)
 - [ ] Group by direction / boarding platform (のりば) at large stations
 - [ ] Vertical (tategaki) friendly HTML variant
 - [ ] Highlight first and last departures (始発 / 最終)

@@ -36,3 +36,8 @@ def test_route_renderers(tozai):
     assert "| みどり団地 | 07:14 | 08:14 | 17:14 |" in md
     assert render.route_csv(rt).splitlines()[1].startswith("ST_EKI_2,東西駅前,07:05")
     assert render.route_text(rt).splitlines()[0] == "2 (Weekdays)"
+
+
+def test_route_wrap_midnight(tozai):
+    rt = route_timetable(tozai, "R1", direction="0", wrap_midnight=True)
+    assert rt.row("ST_BYO")[-1] == "00:42"

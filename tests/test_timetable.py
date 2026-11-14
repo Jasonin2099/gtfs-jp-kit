@@ -49,3 +49,14 @@ def test_renderers(tozai):
     assert csv_out[0].startswith("column,time,route")
     assert len(csv_out) == 1 + sum(len(v) for v in tt.departures.values())
     assert "[平日]" in render.stop_text(tt, "ja")
+
+
+def test_wrap_midnight(tozai):
+    plain = stop_timetable(tozai, "東西駅前", day_types=("weekday",))
+    wrapped = stop_timetable(tozai, "東西駅前", day_types=("weekday",), wrap_midnight=True)
+    assert plain.hours == wrapped.hours  # still ordered on the service day
+    assert plain.hour_label(24) == "24" and wrapped.hour_label(24) == "0"
+    last = wrapped.departures["Weekdays"][-1]
+    assert wrapped.time_label(last) == "00:30"
+    md = render.stop_markdown(wrapped)
+    assert "| 0 | 30 |" in md.splitlines()

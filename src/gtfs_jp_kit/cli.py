@@ -73,6 +73,7 @@ def _cmd_timetable_stop(args: argparse.Namespace) -> int:
             day_types=day_types,
             routes=set(args.route) if args.route else None,
             lang=args.lang,
+            wrap_midnight=args.wrap_midnight,
         )
     except KeyError as e:
         print(e.args[0], file=sys.stderr)
@@ -101,6 +102,7 @@ def _cmd_timetable_route(args: argparse.Namespace) -> int:
             on=parse_date(args.date) if args.date else None,
             day_type=args.day,
             lang=args.lang,
+            wrap_midnight=args.wrap_midnight,
         )
     except KeyError as e:
         print(e.args[0], file=sys.stderr)
@@ -173,6 +175,9 @@ def build_parser() -> argparse.ArgumentParser:
     ts.add_argument("--route", action="append", help="only this route_id (repeatable)")
     ts.add_argument("--format", choices=["text", "md", "csv", "html"], default="text")
     ts.add_argument("--lang", choices=["en", "ja"], default="en")
+    ts.add_argument(
+        "--wrap-midnight", action="store_true", help="show 24:30 as 00:30 (next calendar day)"
+    )
     ts.set_defaults(func=_cmd_timetable_stop)
 
     tr = tsub.add_parser("route", help="route timetable, stops x trips (路線時刻表)")
@@ -183,6 +188,9 @@ def build_parser() -> argparse.ArgumentParser:
     tr.add_argument("--day", default="weekday", help="weekday, saturday or sunday")
     tr.add_argument("--format", choices=["text", "md", "csv", "html"], default="text")
     tr.add_argument("--lang", choices=["en", "ja"], default="en")
+    tr.add_argument(
+        "--wrap-midnight", action="store_true", help="show 24:30 as 00:30 (next calendar day)"
+    )
     tr.set_defaults(func=_cmd_timetable_route)
     return p
 

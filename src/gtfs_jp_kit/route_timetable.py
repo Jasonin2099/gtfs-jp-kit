@@ -44,11 +44,12 @@ def merge_stop_orders(sequences: list[list[str]]) -> list[str]:
     return order
 
 
-def _hhmm(value: str) -> str:
+def _hhmm(value: str, wrap: bool = False) -> str:
     secs = parse_time(value)
     if secs is None:
         return ""
-    return f"{secs // 3600:02d}:{secs // 60 % 60:02d}"
+    hour = secs // 3600
+    return f"{hour % 24 if wrap else hour:02d}:{secs // 60 % 60:02d}"
 
 
 def route_timetable(
@@ -59,6 +60,7 @@ def route_timetable(
     on: date | None = None,
     day_type: str = "weekday",
     lang: str = "en",
+    wrap_midnight: bool = False,
 ) -> RouteTimetable:
     routes = feed["routes"].index("route_id")
     if route_id not in routes:
@@ -94,7 +96,7 @@ def route_timetable(
     for tid, rows in seqs.items():
         rows.sort()
         orders.append([sid for _, sid, _ in rows])
-        times[tid] = {sid: _hhmm(t) for _, sid, t in rows}
+        times[tid] = {sid: _hhmm(t, wrap_midnight) for _, sid, t in rows}
         first[tid] = min((parse_time(t) or 0) for _, _, t in rows)
     trips = sorted((t for t in trips if t["trip_id"] in times), key=lambda t: first[t["trip_id"]])
     names = feed["stops"].index("stop_id")

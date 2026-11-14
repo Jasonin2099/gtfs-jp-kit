@@ -41,14 +41,16 @@ def stop_html(tt: StopTimetable, lang: str = "en") -> str:
     parts.extend(f'<th scope="col">{escape(c)}</th>' for c in tt.columns)
     parts.append("</tr></thead>\n<tbody>\n")
     for h in tt.hours:
-        parts.append(f'<tr><th class="hour" scope="row">{h}</th>')
+        parts.append(f'<tr><th class="hour" scope="row">{tt.hour_label(h)}</th>')
         for c in tt.columns:
             spans = []
             for d in tt.departures[c]:
                 if d.hour != h:
                     continue
                 mark = tt.marks.get((d.route_name, d.headsign), "") + d.symbol
-                title = escape(f"{d.hhmm} {d.route_name} {d.headsign}".strip(), quote=True)
+                title = escape(
+                    f"{tt.time_label(d)} {d.route_name} {d.headsign}".strip(), quote=True
+                )
                 m = f"<b>{escape(mark)}</b>" if mark else ""
                 spans.append(f'<span title="{title}">{m}{d.minute:02d}</span>')
             parts.append(f'<td class="min">{"".join(spans)}</td>')

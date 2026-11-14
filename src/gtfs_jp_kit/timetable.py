@@ -135,6 +135,13 @@ class StopTimetable:
     departures: dict[str, list[Departure]]
     marks: dict[tuple[str, str], str] = field(default_factory=dict)  # (route, headsign) -> mark
     symbols: dict[str, str] = field(default_factory=dict)  # symbol -> description
+    wrap_midnight: bool = False  # show 24:30 as 0:30 (the next calendar day)
+
+    def hour_label(self, hour: int) -> str:
+        return str(hour % 24 if self.wrap_midnight else hour)
+
+    def time_label(self, d: Departure) -> str:
+        return f"{self.hour_label(d.hour).zfill(2)}:{d.minute:02d}"
 
     @property
     def hours(self) -> list[int]:
@@ -187,6 +194,7 @@ def stop_timetable(
     day_types: tuple[str, ...] = DAY_TYPES,
     routes: set[str] | None = None,
     lang: str = "en",
+    wrap_midnight: bool = False,
 ) -> StopTimetable:
     """Build a stop timetable for one date or for the regular day types."""
     stop_ids = resolve_stops(feed, stop)
@@ -210,4 +218,5 @@ def stop_timetable(
         departures=deps,
         marks=_assign_marks(every),
         symbols=dict(sorted(symbols.items())),
+        wrap_midnight=wrap_midnight,
     )

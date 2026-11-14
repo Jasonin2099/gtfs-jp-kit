@@ -53,6 +53,9 @@ gtfs-jp timetable route FEED ROUTE_ID [--direction 0|1] [--date YYYYMMDD | --day
 gtfs-jp diff OLD NEW [--stop STOP ...] [--lang en|ja]
 ```
 
+Times after midnight keep GTFS service-day hours (24:30) by default;
+`--wrap-midnight` prints them as 00:30 while keeping them at the end of the day.
+
 `FEED` is a GTFS zip or a directory. `STOP` is a stop_id, a station
 (its platforms are included) or an exact stop_name. `check` exits with 1 when
 there are errors (or warnings with `--strict`), so it can gate CI.
