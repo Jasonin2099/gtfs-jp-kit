@@ -10,6 +10,8 @@ from . import __version__
 from .checks import run_checks
 from .feed import load_feed
 from .findings import summarize
+from .info import render as render_info
+from .info import summary
 
 
 def _cmd_check(args: argparse.Namespace) -> int:
@@ -43,6 +45,15 @@ def _cmd_check(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_info(args: argparse.Namespace) -> int:
+    s = summary(load_feed(args.feed))
+    if args.format == "json":
+        print(json.dumps(s, ensure_ascii=False, indent=2))
+    else:
+        print(render_info(s, args.lang))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="gtfs-jp", description="GTFS-JP toolkit")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -58,6 +69,12 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--ignore", default="", help="comma-separated finding codes to drop")
     c.add_argument("--strict", action="store_true", help="exit 1 on warnings too")
     c.set_defaults(func=_cmd_check)
+
+    i = sub.add_parser("info", help="summarize a feed")
+    i.add_argument("feed")
+    i.add_argument("--format", choices=["text", "json"], default="text")
+    i.add_argument("--lang", choices=["en", "ja"], default="en")
+    i.set_defaults(func=_cmd_info)
     return p
 
 

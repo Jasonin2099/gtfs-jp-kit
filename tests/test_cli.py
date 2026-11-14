@@ -22,3 +22,13 @@ def test_check_fails_on_error(tmp_path, capsys):
     (tmp_path / "agency.txt").write_text("agency_id,agency_name\nA,バス\n", encoding="utf-8")
     assert main(["check", str(tmp_path), "--lang", "ja"]) == 1
     assert "必須" in capsys.readouterr().out
+
+
+def test_info(capsys):
+    assert main(["info", str(FIXTURE), "--lang", "ja"]) == 0
+    out = capsys.readouterr().out
+    assert "東西市" in out and "2026-10-01 - 2027-03-31" in out
+    assert main(["info", str(FIXTURE), "--format", "json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["services"] == ["SA", "SU", "WD"]
+    assert data["translation_languages"] == ["en", "ja-Hrkt"]
