@@ -35,8 +35,9 @@ where = ["src"]
 gtfs_jp_kit = ["py.typed"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+addopts = "--doctest-modules"
+testpaths = ["tests", "src/gtfs_jp_kit"]
 
 [tool.ruff]
 line-length = 100

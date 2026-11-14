@@ -55,7 +55,7 @@ def _uses_continuous_stops(feed: Feed) -> bool:
 
 def conditional_files(feed: Feed) -> Iterator[Finding]:
     # fare_rules.txt: required unless every route has the same flat fare.
-    fares = {r.get("fare_id") for r in feed["fare_attributes"]} - {""}
+    fares = {r.get("fare_id", "") for r in feed["fare_attributes"]} - {""}
     if len(fares) > 1 and not feed.has("fare_rules"):
         yield Finding(
             "missing-fare-rules",
