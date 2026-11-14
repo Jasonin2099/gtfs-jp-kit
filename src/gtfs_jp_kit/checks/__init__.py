@@ -11,7 +11,7 @@ from typing import Callable
 
 from ..feed import Feed
 from ..findings import SEVERITIES, Finding
-from . import structure, values
+from . import structure, translations, values
 
 Check = Callable[[Feed], Iterable[Finding]]
 
@@ -25,6 +25,8 @@ CHECKS: list[Check] = [
     values.agency,
     values.routes,
     values.fares,
+    translations.structure,
+    translations.readings,
 ]
 
 
