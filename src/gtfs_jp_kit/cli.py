@@ -13,6 +13,7 @@ from .feed import load_feed
 from .findings import summarize
 from .info import render as render_info
 from .info import summary
+from .route_timetable import route_timetable
 from .timetable import stop_timetable
 
 
@@ -84,6 +85,32 @@ def _cmd_timetable_stop(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_timetable_route(args: argparse.Namespace) -> int:
+    feed = load_feed(args.feed)
+    if args.day not in DAY_TYPES:
+        print(f"unknown day type: {args.day}", file=sys.stderr)
+        return 2
+    try:
+        rt = route_timetable(
+            feed,
+            args.route,
+            direction=args.direction,
+            on=parse_date(args.date) if args.date else None,
+            day_type=args.day,
+            lang=args.lang,
+        )
+    except KeyError as e:
+        print(e.args[0], file=sys.stderr)
+        return 2
+    if args.format == "md":
+        sys.stdout.write(render.route_markdown(rt, args.lang))
+    elif args.format == "csv":
+        sys.stdout.write(render.route_csv(rt))
+    else:
+        sys.stdout.write(render.route_text(rt, args.lang))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="gtfs-jp", description="GTFS-JP toolkit")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -117,6 +144,16 @@ def build_parser() -> argparse.ArgumentParser:
     ts.add_argument("--format", choices=["text", "md", "csv"], default="text")
     ts.add_argument("--lang", choices=["en", "ja"], default="en")
     ts.set_defaults(func=_cmd_timetable_stop)
+
+    tr = tsub.add_parser("route", help="route timetable, stops x trips (路線時刻表)")
+    tr.add_argument("feed")
+    tr.add_argument("route", help="route_id")
+    tr.add_argument("--direction", choices=["0", "1"])
+    tr.add_argument("--date", help="one service date (YYYYMMDD)")
+    tr.add_argument("--day", default="weekday", help="weekday, saturday or sunday")
+    tr.add_argument("--format", choices=["text", "md", "csv"], default="text")
+    tr.add_argument("--lang", choices=["en", "ja"], default="en")
+    tr.set_defaults(func=_cmd_timetable_route)
     return p
 
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 
+from .route_timetable import RouteTimetable
 from .timetable import StopTimetable
 
 
@@ -50,3 +51,35 @@ def stop_csv(tt: StopTimetable) -> str:
         for d in tt.departures[c]:
             w.writerow([c, d.hhmm, d.route_name, d.headsign, d.symbol, d.stop_id, d.trip_id])
     return buf.getvalue()
+
+
+def route_markdown(rt: RouteTimetable, lang: str = "en") -> str:
+    blank = "—"
+    stop_label = "停留所" if lang == "ja" else "Stop"
+    lines = [f"## {_md_escape(rt.route_name)} ({_md_escape(rt.title)})", ""]
+    heads = [t.get("jp_trip_desc_symbol", "") + t.get("trip_headsign", "") for t in rt.trips]
+    lines.append("| " + " | ".join([stop_label, *map(_md_escape, heads)]) + " |")
+    lines.append("|:---|" + "|".join(":---:" for _ in rt.trips) + "|")
+    for sid, name in rt.stops:
+        cells = [c or blank for c in rt.row(sid)]
+        lines.append("| " + " | ".join([_md_escape(name), *cells]) + " |")
+    return "\n".join(lines) + "\n"
+
+
+def route_csv(rt: RouteTimetable) -> str:
+    buf = io.StringIO()
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(["stop_id", "stop_name", *(t["trip_id"] for t in rt.trips)])
+    for sid, name in rt.stops:
+        w.writerow([sid, name, *rt.row(sid)])
+    return buf.getvalue()
+
+
+def route_text(rt: RouteTimetable, lang: str = "en") -> str:
+    width = max((len(n) for _, n in rt.stops), default=4)
+    out = [f"{rt.route_name} ({rt.title})"]
+    for sid, name in rt.stops:
+        cells = [c or "  -  " for c in rt.row(sid)]
+        # Full-width names: pad with ideographic spaces so columns line up.
+        out.append(name + "\u3000" * (width - len(name)) + "  " + " ".join(cells))
+    return "\n".join(out) + "\n"
