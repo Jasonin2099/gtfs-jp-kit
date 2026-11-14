@@ -9,6 +9,7 @@ import sys
 from . import __version__, html, render
 from .calendar import DAY_TYPES, parse_date
 from .checks import run_checks
+from .diff import feed_diff, render_feed_diff, render_stop_diff, stop_diff
 from .feed import load_feed
 from .findings import summarize
 from .info import render as render_info
@@ -120,6 +121,19 @@ def _cmd_timetable_route(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_diff(args: argparse.Namespace) -> int:
+    old, new = load_feed(args.old), load_feed(args.new)
+    sys.stdout.write(render_feed_diff(feed_diff(old, new), args.lang))
+    for stop in args.stop or []:
+        try:
+            diffs = stop_diff(old, new, stop, lang=args.lang)
+        except KeyError as e:
+            print(e.args[0], file=sys.stderr)
+            return 2
+        sys.stdout.write("\n" + render_stop_diff(stop, diffs, args.lang))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="gtfs-jp", description="GTFS-JP toolkit")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -141,6 +155,13 @@ def build_parser() -> argparse.ArgumentParser:
     i.add_argument("--format", choices=["text", "json"], default="text")
     i.add_argument("--lang", choices=["en", "ja"], default="en")
     i.set_defaults(func=_cmd_info)
+
+    d = sub.add_parser("diff", help="what changes for passengers between two feed versions")
+    d.add_argument("old")
+    d.add_argument("new")
+    d.add_argument("--stop", action="append", help="also diff this stop's timetable (repeatable)")
+    d.add_argument("--lang", choices=["en", "ja"], default="en")
+    d.set_defaults(func=_cmd_diff)
 
     t = sub.add_parser("timetable", help="print timetables")
     tsub = t.add_subparsers(dest="kind", required=True)
