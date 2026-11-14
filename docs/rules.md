@@ -46,6 +46,15 @@ or against a [JP] value rule; **info** = 推奨 items and notes.
 | `fare-price-yen` | error | JPY prices are whole numbers |
 | `zone-id-missing` | error | fare_rules.txt uses zones but stops have no zone_id |
 
+## References
+
+| Code | Severity | Rule |
+|---|---|---|
+| `attribution-role` | error | each attributions.txt row has is_producer, is_operator or is_authority = 1 (条件付必須) |
+| `stop-outside-japan` | warning | stop coordinates are outside Japan (and a hint when lat/lon look swapped) |
+| `fare-rule-reference` | error | fare_rules.txt refers to an unknown fare_id, route_id or zone |
+| `trip-symbol-without-desc` | warning | jp_trip_desc_symbol is set but jp_trip_desc does not explain it |
+
 ## translations.txt
 
 | Code | Severity | Rule |

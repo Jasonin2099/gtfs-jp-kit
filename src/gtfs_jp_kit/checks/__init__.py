@@ -11,7 +11,7 @@ from typing import Callable
 
 from ..feed import Feed
 from ..findings import SEVERITIES, Finding
-from . import legacy, structure, translations, values
+from . import legacy, references, structure, translations, values
 
 Check = Callable[[Feed], Iterable[Finding]]
 
@@ -27,6 +27,10 @@ CHECKS: list[Check] = [
     values.fares,
     translations.structure,
     translations.readings,
+    references.attributions,
+    references.stop_coordinates,
+    references.fare_rules,
+    references.trip_symbols,
     legacy.presence,
     legacy.references,
 ]

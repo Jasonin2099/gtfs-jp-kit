@@ -5,19 +5,19 @@ Small, self-contained items. Each one should be a single pull request with tests
 ## Checks
 
 - [ ] `--profile v3` that applies the GTFS-JP v3 required/optional table instead of v4
-- [ ] attributions.txt: one of is_producer / is_operator / is_authority must be 1 (条件付必須)
+- [x] attributions.txt: one of is_producer / is_operator / is_authority must be 1 (条件付必須)
 - [ ] agency_url / feed_publisher_url: http(s) URL format
 - [ ] agency_phone: Japanese phone number format (hyphenated, half-width)
 - [ ] stops.txt: platform_code values are half-width and short (のりば番号)
-- [ ] stops.txt: coordinates inside Japan's bounding box (catch swapped lat/lon)
+- [x] stops.txt: coordinates inside Japan's bounding box (catch swapped lat/lon)
 - [ ] stops.txt: same stop_name with different readings across rows
 - [ ] translations.txt: duplicate primary keys
 - [ ] translations.txt: half-width katakana in readings (warn, suggest hiragana)
 - [ ] translations.txt: English stop names that look translated instead of romanized (e.g. "Primary school")
 - [ ] routes.txt: jp_parent_route_id usage notes (v3 vs v4 meaning)
-- [ ] trips.txt: jp_trip_desc_symbol set without jp_trip_desc
+- [x] trips.txt: jp_trip_desc_symbol set without jp_trip_desc
 - [ ] fare_attributes.txt: payment_method / transfers enum values
-- [ ] fare_rules.txt: references to unknown fare_id / route_id / zone
+- [x] fare_rules.txt: references to unknown fare_id / route_id / zone
 - [ ] calendar_dates.txt: national holidays not handled when weekday service runs on them
 - [ ] feed_info.txt: feed_version format `YYYY.MM.DD_vN` hint
 - [ ] Fares V2 (任意): minimal referential checks for fare_products / fare_leg_rules
