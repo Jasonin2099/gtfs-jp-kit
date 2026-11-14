@@ -6,12 +6,14 @@ import argparse
 import json
 import sys
 
-from . import __version__
+from . import __version__, render
+from .calendar import DAY_TYPES, parse_date
 from .checks import run_checks
 from .feed import load_feed
 from .findings import summarize
 from .info import render as render_info
 from .info import summary
+from .timetable import stop_timetable
 
 
 def _cmd_check(args: argparse.Namespace) -> int:
@@ -54,6 +56,34 @@ def _cmd_info(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_timetable_stop(args: argparse.Namespace) -> int:
+    feed = load_feed(args.feed)
+    day_types = tuple(t for t in args.days.split(",") if t)
+    bad = [t for t in day_types if t not in DAY_TYPES]
+    if bad:
+        print(f"unknown day type: {', '.join(bad)} (use {', '.join(DAY_TYPES)})", file=sys.stderr)
+        return 2
+    try:
+        tt = stop_timetable(
+            feed,
+            args.stop,
+            on=parse_date(args.date) if args.date else None,
+            day_types=day_types,
+            routes=set(args.route) if args.route else None,
+            lang=args.lang,
+        )
+    except KeyError as e:
+        print(e.args[0], file=sys.stderr)
+        return 2
+    if args.format == "md":
+        sys.stdout.write(render.stop_markdown(tt, args.lang))
+    elif args.format == "csv":
+        sys.stdout.write(render.stop_csv(tt))
+    else:
+        sys.stdout.write(render.stop_text(tt, args.lang))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="gtfs-jp", description="GTFS-JP toolkit")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -75,6 +105,18 @@ def build_parser() -> argparse.ArgumentParser:
     i.add_argument("--format", choices=["text", "json"], default="text")
     i.add_argument("--lang", choices=["en", "ja"], default="en")
     i.set_defaults(func=_cmd_info)
+
+    t = sub.add_parser("timetable", help="print timetables")
+    tsub = t.add_subparsers(dest="kind", required=True)
+    ts = tsub.add_parser("stop", help="stop timetable (停留所時刻表)")
+    ts.add_argument("feed")
+    ts.add_argument("stop", help="stop_id, station id or exact stop_name")
+    ts.add_argument("--date", help="one service date (YYYYMMDD); default: regular day types")
+    ts.add_argument("--days", default=",".join(DAY_TYPES), help="weekday,saturday,sunday")
+    ts.add_argument("--route", action="append", help="only this route_id (repeatable)")
+    ts.add_argument("--format", choices=["text", "md", "csv"], default="text")
+    ts.add_argument("--lang", choices=["en", "ja"], default="en")
+    ts.set_defaults(func=_cmd_timetable_stop)
     return p
 
 

@@ -32,3 +32,10 @@ def test_info(capsys):
     data = json.loads(capsys.readouterr().out)
     assert data["services"] == ["SA", "SU", "WD"]
     assert data["translation_languages"] == ["en", "ja-Hrkt"]
+
+
+def test_timetable_stop(capsys):
+    assert main(["timetable", "stop", str(FIXTURE), "東西駅前", "--format", "md"]) == 0
+    assert "| Hour | Weekdays |" in capsys.readouterr().out
+    assert main(["timetable", "stop", str(FIXTURE), "nowhere"]) == 2
+    assert main(["timetable", "stop", str(FIXTURE), "ST_SHI", "--days", "holiday"]) == 2
