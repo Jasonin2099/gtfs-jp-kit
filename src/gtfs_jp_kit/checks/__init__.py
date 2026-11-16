@@ -23,6 +23,7 @@ CHECKS: list[Check] = [
     structure.unneeded_fields,
     values.feed_info,
     values.agency,
+    values.urls,
     values.routes,
     values.fares,
     translations.structure,

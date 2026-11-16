@@ -62,3 +62,26 @@ def test_fares(make_feed):
     stops = "stop_id,stop_name,stop_lat,stop_lon,location_type\nS,駅,36,138,0\n"
     feed = make_feed(fare_attributes=fares, fare_rules=rules, stops=stops)
     assert codes(values.fares(feed)) == ["fare-currency", "fare-price-yen", "zone-id-missing"]
+
+
+def test_http_urls(make_feed):
+    ok = make_feed()
+    assert "bad-url" not in codes(values.urls(ok))
+
+    bad_info = make_feed(feed_info=INFO_HEAD + "X,www.example.jp,ja,20260101,20261231,1\n")
+    assert codes(values.urls(bad_info)) == ["bad-url"]
+
+    agency = (
+        "agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_fare_url\n"
+        "tozai,B,example.jp,Asia/Tokyo,ja,https://example.jp/fare\n"
+        "west,C,https://example.jp,Asia/Tokyo,ja,ftp://example.jp/fare\n"
+    )
+    assert codes(values.urls(make_feed(agency=agency))) == ["bad-url", "bad-url"]
+
+    # full-width scheme, spaces, missing host, https is fine with a path in Japanese
+    assert values.is_http_url("https://example.jp/バス")
+    assert not values.is_http_url("ｈｔｔｐｓ://example.jp")
+    assert not values.is_http_url("https://example.jp/path with space")
+    assert not values.is_http_url("https://")
+    assert not values.is_http_url("javascript:alert(1)")
+    assert values.is_http_url("http://localhost:8080/gtfs")

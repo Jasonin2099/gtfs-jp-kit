@@ -39,6 +39,7 @@ or against a [JP] value rule; **info** = 推奨 items and notes.
 | `agency-lang` | warning | agency_lang is `ja` |
 | `agency-id-not-corporate-number` | info | agency_id should be the 13-digit 法人番号 (optionally `_N`) |
 | `agency-id-check-digit` | warning | a 13-digit agency_id has a wrong 法人番号 check digit |
+| `bad-url` | error | agency_url, agency_fare_url, feed_publisher_url and feed_contact_url are http(s) URLs with a host (no missing scheme, spaces or full-width ASCII) |
 | `route-text-color-missing` | error | route_text_color is set whenever route_color is set |
 | `bad-color` | error | colors are 6 hex digits without `#` |
 | `route-color-contrast` | warning | route_color / route_text_color contrast is below 3:1 |

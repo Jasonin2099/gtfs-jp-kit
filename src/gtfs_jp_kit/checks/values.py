@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterator
 from datetime import date
+from urllib.parse import urlparse
 
 from .. import corpnum
 from ..feed import Feed
@@ -198,6 +199,54 @@ def contrast(a: str, b: str) -> float:
     """
     la, lb = sorted((_luminance(a), _luminance(b)), reverse=True)
     return (la + 0.05) / (lb + 0.05)
+
+
+# Full-width ASCII (U+FF01–U+FF5E) often shows up in Japanese-edited URLs (ｈｔｔｐｓ：／／…).
+_FULLWIDTH_ASCII = re.compile(r"[\uff01-\uff5e]")
+_URL_FIELDS = (
+    ("agency", "agency.txt", ("agency_url", "agency_fare_url")),
+    ("feed_info", "feed_info.txt", ("feed_publisher_url", "feed_contact_url")),
+)
+
+
+def is_http_url(value: str) -> bool:
+    """True when value is an http(s) URL with a host, and no whitespace or full-width ASCII.
+
+    >>> is_http_url("https://example.jp/bus")
+    True
+    >>> is_http_url("www.example.jp")
+    False
+    >>> is_http_url("https://example.jp/バス")
+    True
+    """
+    if not value or any(ch.isspace() for ch in value) or _FULLWIDTH_ASCII.search(value):
+        return False
+    try:
+        parsed = urlparse(value)
+    except ValueError:
+        return False
+    return parsed.scheme.lower() in ("http", "https") and bool(parsed.netloc)
+
+
+def urls(feed: Feed) -> Iterator[Finding]:
+    """agency_url / feed_publisher_url (and the optional URL columns) must be http(s)."""
+    for table, filename, fields in _URL_FIELDS:
+        rows = feed.get(table)
+        if rows is None:
+            continue
+        for line, row in rows.with_lines():
+            for field in fields:
+                val = row.get(field, "")
+                if val and not is_http_url(val):
+                    yield Finding(
+                        "bad-url",
+                        "error",
+                        f'{field} must be an http(s) URL (found "{val}")',
+                        f"{field} は http(s) の URL で設定します（現在「{val}」）",
+                        file=filename,
+                        line=line,
+                        field=field,
+                    )
 
 
 def fares(feed: Feed) -> Iterator[Finding]:
