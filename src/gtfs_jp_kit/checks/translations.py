@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterator
 
+from .. import spec
 from ..feed import Feed
 from ..findings import Finding
 
@@ -174,7 +175,8 @@ def structure(feed: Feed) -> Iterator[Finding]:
                 )
 
 
-def readings(feed: Feed) -> Iterator[Finding]:
+def readings(feed: Feed, profile: spec.Profile | str | None = None) -> Iterator[Finding]:
+    english = spec.get_profile(profile).english_recommended
     if not feed.has("translations"):
         return
     idx = _Index(feed)
@@ -210,7 +212,7 @@ def readings(feed: Feed) -> Iterator[Finding]:
                 field=field_name,
                 spec="translations.txt",
             )
-        if missing_en:
+        if english and missing_en:
             yield Finding(
                 "english-missing",
                 "info",

@@ -43,8 +43,8 @@ $ gtfs-jp timetable stop feed.zip 東西駅前 --format md --lang ja
 ## Usage
 
 ```console
-gtfs-jp check FEED [--lang en|ja] [--format text|json|markdown] [--min-severity info|warning|error]
-                   [--ignore CODE,CODE] [--strict]
+gtfs-jp check FEED [--profile v4|v3] [--lang en|ja] [--format text|json|markdown]
+                   [--min-severity info|warning|error] [--ignore CODE,CODE] [--strict]
 gtfs-jp info FEED [--lang en|ja] [--format text|json]
 gtfs-jp timetable stop FEED STOP [--date YYYYMMDD | --days weekday,saturday,sunday]
                                  [--route ROUTE_ID] [--format text|md|csv|html] [--lang en|ja]
@@ -52,6 +52,13 @@ gtfs-jp timetable route FEED ROUTE_ID [--direction 0|1] [--date YYYYMMDD | --day
                                       [--format text|md|csv|html] [--lang en|ja]
 gtfs-jp diff OLD NEW [--stop STOP ...] [--lang en|ja]
 ```
+
+`--profile v3` checks a feed made for GTFS-JP v3 (標準的なバス情報フォーマット
+第 3 版) against the v3 file and field table instead of v4: shapes.txt,
+location_type, feed dates and feed_version are optional, nothing is 推奨, and
+agency_jp.txt / office_jp.txt / pattern_jp.txt are not reported as leftovers.
+Value rules (`ja`, `Asia/Tokyo`, `JPY`, readings) are the same, because v3 fixes
+those values too. See [docs/rules.md](docs/rules.md#profiles).
 
 Times after midnight keep GTFS service-day hours (24:30) by default;
 `--wrap-midnight` prints them as 00:30 while keeping them at the end of the day.
@@ -116,6 +123,7 @@ gtfs-jp-kit は、GTFS データを「標準的なバス情報フォーマット
 - `gtfs-jp check`：GTFS-JP 独自の必須ファイル・必須項目、読み仮名（ja-Hrkt）、
   法人番号の検査用数字、`Asia/Tokyo`、円単位の運賃、第 3 版拡張ファイル
   （agency_jp.txt など）の参照整合性を確認します。`--lang ja` で日本語表示。
+  第 3 版向けに作ったデータは `--profile v3` で第 3 版の必須・任意の区分で確認できます。
 - `gtfs-jp timetable stop`：時ごとの行 × 平日・土曜・日曜祝日の列で停留所時刻表を
   作ります。行先違いと `jp_trip_desc_symbol` は記号と凡例で示します。
   テキスト・Markdown・CSV・印刷向け HTML に対応。

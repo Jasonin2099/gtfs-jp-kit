@@ -13,8 +13,9 @@ from ..findings import Finding
 MAX_ROWS = 20
 
 
-def required_files(feed: Feed) -> Iterator[Finding]:
-    for name in spec.REQUIRED_FILES:
+def required_files(feed: Feed, profile: spec.Profile | str | None = None) -> Iterator[Finding]:
+    prof = spec.get_profile(profile)
+    for name in prof.required_files:
         if not feed.has(name):
             yield Finding(
                 "missing-required-file",
@@ -32,7 +33,7 @@ def required_files(feed: Feed) -> Iterator[Finding]:
             "calendar.txt と calendar_dates.txt のどちらかが必要です",
             spec="§8.2",
         )
-    for name in spec.RECOMMENDED_FILES:
+    for name in prof.recommended_files:
         if not feed.has(name):
             yield Finding(
                 "missing-recommended-file",
@@ -53,7 +54,8 @@ def _uses_continuous_stops(feed: Feed) -> bool:
     return False
 
 
-def conditional_files(feed: Feed) -> Iterator[Finding]:
+def conditional_files(feed: Feed, profile: spec.Profile | str | None = None) -> Iterator[Finding]:
+    prof = spec.get_profile(profile)
     # fare_rules.txt: required unless every route has the same flat fare.
     fares = {r.get("fare_id", "") for r in feed["fare_attributes"]} - {""}
     if len(fares) > 1 and not feed.has("fare_rules"):
@@ -66,7 +68,7 @@ def conditional_files(feed: Feed) -> Iterator[Finding]:
             spec="§8.2",
         )
     # shapes.txt: required with continuous pickup/drop-off (フリー乗降).
-    if not feed.has("shapes"):
+    if prof.shapes_rules and not feed.has("shapes"):
         if _uses_continuous_stops(feed):
             yield Finding(
                 "missing-shapes",
@@ -109,8 +111,8 @@ def conditional_files(feed: Feed) -> Iterator[Finding]:
                 )
 
 
-def required_fields(feed: Feed) -> Iterator[Finding]:
-    for name, fields in spec.REQUIRED_FIELDS.items():
+def required_fields(feed: Feed, profile: spec.Profile | str | None = None) -> Iterator[Finding]:
+    for name, fields in spec.get_profile(profile).required_fields.items():
         table = feed.get(name)
         if table is None:
             continue
@@ -150,8 +152,8 @@ def required_fields(feed: Feed) -> Iterator[Finding]:
                 )
 
 
-def recommended_fields(feed: Feed) -> Iterator[Finding]:
-    for name, fields in spec.RECOMMENDED_FIELDS.items():
+def recommended_fields(feed: Feed, profile: spec.Profile | str | None = None) -> Iterator[Finding]:
+    for name, fields in spec.get_profile(profile).recommended_fields.items():
         table = feed.get(name)
         if table is None or not len(table):
             continue
@@ -173,8 +175,8 @@ def recommended_fields(feed: Feed) -> Iterator[Finding]:
                 )
 
 
-def unneeded_fields(feed: Feed) -> Iterator[Finding]:
-    for name, fields in spec.UNNEEDED_FIELDS.items():
+def unneeded_fields(feed: Feed, profile: spec.Profile | str | None = None) -> Iterator[Finding]:
+    for name, fields in spec.get_profile(profile).unneeded_fields.items():
         table = feed.get(name)
         if table is None:
             continue

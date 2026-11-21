@@ -10,6 +10,29 @@ for plain GTFS validity.
 Severity: **error** = breaks a 必須 / 禁止 rule; **warning** = very likely wrong
 or against a [JP] value rule; **info** = 推奨 items and notes.
 
+## Profiles
+
+`--profile v4` (default) uses the tables above. `--profile v3` uses the
+"JP v3 区分" columns of 国土交通省「公共交通運行情報標準データ仕様（GTFS-JP）と
+標準的なバス情報フォーマット第３版（GTFS-JP v3）等との差分について」(March 2026),
+§3.1 (files) and §3.2 (fields):
+
+| | v4 | v3 |
+|---|---|---|
+| Required files | same 8 files + calendar / calendar_dates | same |
+| shapes.txt | 条件付必須 / recommended (`missing-shapes`) | 任意 (not reported) |
+| attributions.txt, transfers.txt | 推奨 (`missing-recommended-file`) | not defined / 任意 |
+| Extra required fields | feed_lang, feed_start_date, feed_end_date, feed_version, agency_id, agency_lang, stop_name, stop_lat, stop_lon, location_type, routes.agency_id | feed_lang, agency_id, agency_lang, stop_name, stop_lat, stop_lon, routes.agency_id |
+| 推奨 fields (`recommended-field-empty`) | see `spec.RECOMMENDED_FIELDS` | none (v3 has no 推奨) |
+| 不要 fields (`unneeded-field`) | default_lang, tts_stop_name, stop_timezone | stop_timezone, wheelchair_boarding, fare_rules.contains_id |
+| agency_jp / office_jp / pattern_jp (`v3-extension-file`) | info: no longer needed | part of the spec, not reported (references are still checked) |
+| English translations (`english-missing`) | 推奨 | 任意 (not reported) |
+
+v3 marks feed_lang, agency_timezone, agency_lang, route_type and currency_type
+as 固定 (required with a fixed value), and makes `ja-Hrkt` readings in
+translations.txt 必須 (v3 §2-14-1), so the value and reading rules are the
+same in both profiles.
+
 ## Files and fields (structure)
 
 | Code | Severity | Rule |

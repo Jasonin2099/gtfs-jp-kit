@@ -20,7 +20,7 @@ from .timetable import stop_timetable
 
 def _cmd_check(args: argparse.Namespace) -> int:
     feed = load_feed(args.feed)
-    findings = run_checks(feed)
+    findings = run_checks(feed, profile=args.profile)
     if args.ignore:
         ignored = set(args.ignore.split(","))
         findings = [f for f in findings if f.code not in ignored]
@@ -31,14 +31,26 @@ def _cmd_check(args: argparse.Namespace) -> int:
     counts = summarize(findings)
     if args.format == "json":
         json.dump(
-            {"feed": args.feed, "summary": counts, "findings": [f.to_dict() for f in findings]},
+            {
+                "feed": args.feed,
+                "profile": args.profile,
+                "summary": counts,
+                "findings": [f.to_dict() for f in findings],
+            },
             sys.stdout,
             ensure_ascii=False,
             indent=2,
         )
         sys.stdout.write("\n")
     elif args.format == "markdown":
-        sys.stdout.write(markdown_report(findings, args.lang))
+        title = ""
+        if args.profile != "v4":
+            title = (
+                f"GTFS-JP {args.profile} チェック結果"
+                if args.lang == "ja"
+                else f"GTFS-JP {args.profile} check"
+            )
+        sys.stdout.write(markdown_report(findings, args.lang, title))
     else:
         for f in findings:
             print(f.text(args.lang))
@@ -143,8 +155,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = p.add_subparsers(dest="command", required=True)
 
-    c = sub.add_parser("check", help="check a feed against the GTFS-JP v4 profile")
+    c = sub.add_parser("check", help="check a feed against the GTFS-JP v4 (or v3) profile")
     c.add_argument("feed", help="GTFS zip file or directory")
+    c.add_argument(
+        "--profile",
+        choices=["v4", "v3"],
+        default="v4",
+        help="spec version for required/recommended files and fields (default: v4)",
+    )
     c.add_argument("--format", choices=["text", "json", "markdown"], default="text")
     c.add_argument("--lang", choices=["en", "ja"], default="en", help="message language")
     c.add_argument(

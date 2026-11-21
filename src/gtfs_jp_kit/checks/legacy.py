@@ -17,9 +17,10 @@ from ..findings import Finding
 _ZIP = re.compile(r"^\d{7}$")
 
 
-def presence(feed: Feed) -> Iterator[Finding]:
+def presence(feed: Feed, profile: spec.Profile | str | None = None) -> Iterator[Finding]:
+    legacy_v3 = spec.get_profile(profile).v3_extensions_are_legacy
     for name in spec.V3_EXTENSION_FILES:
-        if feed.has(name):
+        if legacy_v3 and feed.has(name):
             yield Finding(
                 "v3-extension-file",
                 "info",
