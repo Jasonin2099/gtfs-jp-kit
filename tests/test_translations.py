@@ -57,3 +57,22 @@ def test_reading_by_record_id(make_feed):
     )
     found = translations.readings(make_feed(translations=HEAD + rows))
     assert not [f for f in found if f.file == "stops.txt" and f.code == "reading-missing"]
+
+
+def test_duplicate_primary_key(make_feed):
+    rows = (
+        "stops,stop_name,ja-Hrkt,しやくしょまえ,,,市役所前\n"  # line 2
+        "stops,stop_name,en,City Hall,,,市役所前\n"  # line 3
+        "stops,stop_name,ja-Hrkt,しやくしょまえ,,,市役所前\n"  # same as 2
+        "stops,stop_name,en,Shiyakusho-mae,,,市役所前\n"  # conflicts with 3
+        "stops,stop_name,en,City Hall,ST_SHI,,\n"  # record_id key: a different key
+        "stops,stop_name,zh-Hans,市政府前,,,市役所前\n"  # other language: fine
+    )
+    found = [f for f in translations.structure(make_feed(translations=HEAD + rows))]
+    dups = [f for f in found if f.code == "translation-duplicate"]
+    assert [(f.line, f.severity) for f in dups] == [(4, "error"), (5, "error")]
+    assert "line 2" in dups[0].message and "identical" in dups[0].message
+    assert "'City Hall'" in dups[1].message
+    assert "異なる" in dups[1].message_ja
+    # the duplicate row is reported once, not checked again
+    assert codes(found) == ["translation-duplicate", "translation-duplicate"]

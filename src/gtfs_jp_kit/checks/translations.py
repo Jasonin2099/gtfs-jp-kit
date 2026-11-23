@@ -1,4 +1,4 @@
-"""translations.txt rules: reading (ja-Hrkt) coverage and record references.
+"""translations.txt rules: reading (ja-Hrkt) coverage, duplicate keys and record references.
 
 GTFS-JP v4 makes translations.txt 必須, readings (``language=ja-Hrkt``) for
 names 必須 and English 推奨.
@@ -25,6 +25,8 @@ RECORD_KEYS = {
     "attributions": "attribution_id",
 }
 TABLES = (*RECORD_KEYS, "feed_info")
+#: GTFS primary key of translations.txt; GTFS-JP v4 uses the GTFS format as is.
+PRIMARY_KEY = ("table_name", "field_name", "language", "record_id", "record_sub_id", "field_value")
 
 #: Hiragana, katakana, prolonged sound mark, middle dot, spaces and a few
 #: separators that appear in readings of stop names.
@@ -91,9 +93,31 @@ def structure(feed: Feed) -> Iterator[Finding]:
         )
         return
     keys: dict[str, set[str]] = {}
+    #: primary key (table_name, field_name, language, record_id, record_sub_id,
+    #: field_value) -> (first line, its translation)
+    first: dict[tuple[str, ...], tuple[int, str]] = {}
     for line, row in table.with_lines():
         name = row.get("table_name", "")
         f = dict(file="translations.txt", line=line, spec="translations.txt")
+        pk = tuple(row.get(c, "") for c in PRIMARY_KEY)
+        text = row.get("translation", "")
+        if pk in first:
+            dup_line, dup_text = first[pk]
+            if text == dup_text:
+                en, ja = " (identical translation)", "（翻訳も同じ）"
+            else:
+                en = f" with a different translation ({dup_text!r})"
+                ja = f"（翻訳が異なる：「{dup_text}」）"
+            yield Finding(
+                "translation-duplicate",
+                "error",
+                f"same key as line {dup_line}{en}",
+                f"{dup_line} 行目と同じキーです{ja}",
+                field="translation",
+                **f,
+            )
+            continue
+        first[pk] = (line, text)
         if name not in TABLES and not feed.has(name):
             yield Finding(
                 "translation-unknown-table",

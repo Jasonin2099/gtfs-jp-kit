@@ -84,6 +84,7 @@ same in both profiles.
 | Code | Severity | Rule |
 |---|---|---|
 | `translations-old-format` | error | the first-edition `trans_id` format is used |
+| `translation-duplicate` | error | two rows share the GTFS primary key (table_name, field_name, language, record_id, record_sub_id, field_value); the message says whether the translations differ |
 | `translation-unknown-table` | error | table_name is not a translatable file |
 | `translation-feed-info-key` | error | feed_info translations must not set record_id / record_sub_id / field_value |
 | `translation-key` | error | exactly one of record_id and field_value is set |
