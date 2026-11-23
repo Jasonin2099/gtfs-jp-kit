@@ -7,7 +7,7 @@ Small, self-contained items. Each one should be a single pull request with tests
 - [x] `--profile v3` that applies the GTFS-JP v3 required/optional table instead of v4
 - [x] attributions.txt: one of is_producer / is_operator / is_authority must be 1 (条件付必須)
 - [x] agency_url / feed_publisher_url: http(s) URL format
-- [ ] agency_phone: Japanese phone number format (hyphenated, half-width)
+- [x] agency_phone: Japanese phone number format (half-width, digit count; hyphens not enforced)
 - [ ] stops.txt: platform_code values are half-width and short (のりば番号)
 - [x] stops.txt: coordinates inside Japan's bounding box (catch swapped lat/lon)
 - [ ] stops.txt: same stop_name with different readings across rows

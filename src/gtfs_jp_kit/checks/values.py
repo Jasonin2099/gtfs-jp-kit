@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Iterator
 from datetime import date
 from urllib.parse import urlparse
@@ -116,6 +117,19 @@ def agency(feed: Feed) -> Iterator[Finding]:
                 field="agency_lang",
                 spec="agency.txt",
             )
+        phone = row.get("agency_phone", "")
+        problem = phone_problem(phone) if phone else None
+        if problem:
+            yield Finding(
+                "bad-phone",
+                "warning",
+                f"agency_phone {phone!r}: {problem[0]}",
+                f"agency_phone「{phone}」：{problem[1]}",
+                file="agency.txt",
+                line=line,
+                field="agency_phone",
+                spec="agency.txt",
+            )
         agency_id = row.get("agency_id", "")
         if not agency_id:
             continue
@@ -142,6 +156,55 @@ def agency(feed: Feed) -> Iterator[Finding]:
                 field="agency_id",
                 spec="agency.txt",
             )
+
+
+_PHONE_CHARS = re.compile(r"^\+?[0-9()\- ]+$")
+#: Domestic numbers with 11 digits: 020 / 050 / 060 / 070 / 080 / 090 and 0800.
+_PHONE_11 = re.compile(r"^(?:0[2-9]0|0800)")
+
+
+def phone_problem(value: str) -> tuple[str, str] | None:
+    """Why ``value`` is not a dialable Japanese phone number, as (en, ja), or None.
+
+    GTFS-JP only gives ``03-2816-5700`` as an example, so hyphens are not required;
+    this looks for full-width characters, notes mixed into the field and digit counts
+    that cannot be a domestic number (10 digits, 11 for 0X0 / 0800, or +81 without
+    the leading 0).
+
+    >>> phone_problem("03-2816-5700") is None
+    True
+    >>> phone_problem("０３－２８１６－５７００")[0]
+    'full-width characters; use half-width (03-2816-5700)'
+    """
+    half = unicodedata.normalize("NFKC", value)
+    half = re.sub(r"[\u2010-\u2015\u2212\u30fc]", "-", half)
+    if not _PHONE_CHARS.match(half):
+        return (
+            "only the phone number goes here (no notes, hours or extensions)",
+            "電話番号以外の文字（受付時間・注記など）が含まれています",
+        )
+    if half != value:
+        return (
+            f"full-width characters; use half-width ({half})",
+            f"全角の数字・記号があります。半角にしてください（{half}）",
+        )
+    digits = re.sub(r"\D", "", value)
+    if value.startswith("+"):
+        if not digits.startswith("81") or len(digits) - 2 not in (9, 10):
+            return (
+                "not a Japanese number in +81 form",
+                "+81 形式の日本の電話番号になっていません",
+            )
+        return None
+    if not digits.startswith("0"):
+        return ("domestic numbers start with 0", "国内の電話番号は 0 から始まります")
+    want = 11 if _PHONE_11.match(digits) else 10
+    if len(digits) != want:
+        return (
+            f"{len(digits)} digits; domestic numbers have 10 (11 for 0X0 / 0800)",
+            f"{len(digits)} 桁です（国内の番号は 10 桁、0X0・0800 で始まる番号は 11 桁）",
+        )
+    return None
 
 
 def routes(feed: Feed) -> Iterator[Finding]:

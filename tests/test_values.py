@@ -85,3 +85,28 @@ def test_http_urls(make_feed):
     assert not values.is_http_url("https://")
     assert not values.is_http_url("javascript:alert(1)")
     assert values.is_http_url("http://localhost:8080/gtfs")
+
+
+def test_agency_phone(make_feed):
+    head = "agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone\n"
+    rows = [
+        "03-2816-5700",  # spec example
+        "0120-123-456",
+        "090-1234-5678",
+        "+81-3-2816-5700",
+        "(082)123-4567",
+        "",
+        "０３－２８１６－５７００",  # full-width
+        "03-2816-5700（平日9時～17時）",  # notes in the field
+        "03-2816-570",  # 9 digits
+        "2816-5700",  # no area code
+    ]
+    agency = head + "".join(f"tozai,B,https://example.jp,Asia/Tokyo,ja,{p}\n" for p in rows)
+    found = [f for f in values.agency(make_feed(agency=agency)) if f.code == "bad-phone"]
+    assert [f.line for f in found] == [8, 9, 10, 11]
+    assert {f.severity for f in found} == {"warning"}
+    assert "(03-2816-5700)" in found[0].message
+    assert "受付時間" in found[1].message_ja
+    assert values.phone_problem("0800-123-4567") is None
+    assert values.phone_problem("0800-123-456") is not None
+    assert values.phone_problem("+1-212-555-0100") is not None
