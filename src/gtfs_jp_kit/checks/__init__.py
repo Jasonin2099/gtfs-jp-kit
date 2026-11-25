@@ -27,6 +27,7 @@ CHECKS: list[Check] = [
     structure.unneeded_fields,
     values.feed_info,
     values.agency,
+    values.attributions,
     values.urls,
     values.stops,
     values.routes,

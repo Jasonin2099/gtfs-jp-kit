@@ -62,7 +62,8 @@ same in both profiles.
 | `agency-lang` | warning | agency_lang is `ja` |
 | `agency-id-not-corporate-number` | info | agency_id should be the 13-digit 法人番号 (optionally `_N`) |
 | `agency-id-check-digit` | warning | a 13-digit agency_id has a wrong 法人番号 check digit |
-| `bad-phone` | warning | agency_phone is a dialable Japanese number: half-width only, no notes or hours in the field, 10 digits (11 for 0X0 / 0800) or `+81` without the leading 0. Hyphens are not required — the spec only gives `03-2816-5700` as an example |
+| `bad-phone` | warning | agency_phone and attribution_phone are dialable Japanese numbers: half-width only, no notes or hours in the field, 10 digits (11 for 0X0 / 0800) or `+81` without the leading 0 |
+| `phone-no-hyphen` | info | a valid phone number written as digits only; §4.13 asks for half-width digits with hyphens (`03-5253-8111`). Not auto-fixed, since the hyphen positions depend on the area code |
 | `bad-url` | error | agency_url, agency_fare_url, feed_publisher_url and feed_contact_url are http(s) URLs with a host (no missing scheme, spaces or full-width ASCII) |
 | `route-text-color-missing` | error | route_text_color is set whenever route_color is set |
 | `bad-color` | error | colors are 6 hex digits without `#` |

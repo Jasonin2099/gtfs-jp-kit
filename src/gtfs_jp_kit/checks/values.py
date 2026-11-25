@@ -117,19 +117,7 @@ def agency(feed: Feed) -> Iterator[Finding]:
                 field="agency_lang",
                 spec="agency.txt",
             )
-        phone = row.get("agency_phone", "")
-        problem = phone_problem(phone) if phone else None
-        if problem:
-            yield Finding(
-                "bad-phone",
-                "warning",
-                f"agency_phone {phone!r}: {problem[0]}",
-                f"agency_phone「{phone}」：{problem[1]}",
-                file="agency.txt",
-                line=line,
-                field="agency_phone",
-                spec="agency.txt",
-            )
+        yield from _phone(row.get("agency_phone", ""), "agency.txt", line, "agency_phone")
         agency_id = row.get("agency_id", "")
         if not agency_id:
             continue
@@ -163,13 +151,51 @@ _PHONE_CHARS = re.compile(r"^\+?[0-9()\- ]+$")
 _PHONE_11 = re.compile(r"^(?:0[2-9]0|0800)")
 
 
+def _phone(value: str, file: str, line: int, field: str) -> Iterator[Finding]:
+    if not value:
+        return
+    problem = phone_problem(value)
+    if problem:
+        yield Finding(
+            "bad-phone",
+            "warning",
+            f"{field} {value!r}: {problem[0]}",
+            f"{field}「{value}」：{problem[1]}",
+            file=file,
+            line=line,
+            field=field,
+            spec=file,
+        )
+    elif value.isdigit():
+        yield Finding(
+            "phone-no-hyphen",
+            "info",
+            f"{field} {value!r} has no hyphens; GTFS-JP writes phone numbers with hyphens "
+            "(e.g. 03-5253-8111)",
+            f"{field}「{value}」にハイフンがありません。電話番号はハイフン入りで設定します"
+            "（例：03-5253-8111）",
+            file=file,
+            line=line,
+            field=field,
+            spec="§4.13",
+        )
+
+
+def attributions(feed: Feed) -> Iterator[Finding]:
+    for line, row in feed["attributions"].with_lines():
+        yield from _phone(
+            row.get("attribution_phone", ""), "attributions.txt", line, "attribution_phone"
+        )
+
+
 def phone_problem(value: str) -> tuple[str, str] | None:
     """Why ``value`` is not a dialable Japanese phone number, as (en, ja), or None.
 
-    GTFS-JP only gives ``03-2816-5700`` as an example, so hyphens are not required;
-    this looks for full-width characters, notes mixed into the field and digit counts
+    Looks for full-width characters, notes mixed into the field and digit counts
     that cannot be a domestic number (10 digits, 11 for 0X0 / 0800, or +81 without
-    the leading 0).
+    the leading 0). Missing hyphens are not a problem here: GTFS-JP §4.13 asks for
+    half-width digits with hyphens, which the checks report separately as info
+    (``phone-no-hyphen``), because where the hyphens go depends on the area code.
 
     >>> phone_problem("03-2816-5700") is None
     True

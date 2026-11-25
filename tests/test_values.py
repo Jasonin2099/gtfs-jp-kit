@@ -179,3 +179,23 @@ def test_platform_code_and_stop_name(make_feed):
 
 def test_fixture_stops_clean(tozai):
     assert list(values.stops(tozai)) == []
+
+
+def test_phone_hyphens_and_attributions(make_feed):
+    head = "agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone\n"
+    agency = head + "tozai,B,https://example.jp,Asia/Tokyo,ja,0352538111\n"
+    found = [f for f in values.agency(make_feed(agency=agency)) if "phone" in f.code]
+    assert [(f.code, f.severity, f.spec) for f in found] == [("phone-no-hyphen", "info", "§4.13")]
+
+    attributions = (
+        "attribution_id,organization_name,is_producer,attribution_phone\n"
+        "A1,X,1,03-5253-8111\n"
+        "A2,Y,1,０３－５２５３－８１１１\n"
+        "A3,Z,1,0352538111\n"
+        "A4,W,1,\n"
+    )
+    found = values.attributions(make_feed(attributions=attributions))
+    assert [(f.line, f.code, f.field) for f in found] == [
+        (3, "bad-phone", "attribution_phone"),
+        (4, "phone-no-hyphen", "attribution_phone"),
+    ]
