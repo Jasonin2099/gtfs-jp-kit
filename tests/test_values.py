@@ -110,3 +110,37 @@ def test_agency_phone(make_feed):
     assert values.phone_problem("0800-123-4567") is None
     assert values.phone_problem("0800-123-456") is not None
     assert values.phone_problem("+1-212-555-0100") is not None
+
+
+def test_fare_values(make_feed):
+    fares = (
+        "fare_id,price,currency_type,payment_method,transfers,transfer_duration,ic_price\n"
+        "OK1,200,JPY,0,0,,195\n"
+        "OK2,200,JPY,1,,3600,-1\n"  # empty transfers = unlimited
+        "OK3,200,JPY,1,2,0,\n"
+        "P2,200,JPY,2,0,,\n"  # payment_method 2
+        "PFW,200,JPY,１,0,,\n"  # full-width 1
+        "PEM,200,JPY,,0,,\n"  # payment_method is 必須
+        "T3,200,JPY,0,3,,\n"
+        "TD,200,JPY,0,1,1.5h,\n"
+        "IC,200,JPY,0,0,,195.5\n"
+        "PR,２００,JPY,0,0,,\n"  # full-width price
+    )
+    found = [
+        (f.line, f.field)
+        for f in values.fares(make_feed(fare_attributes=fares))
+        if f.code in ("bad-fare-value", "fare-price-yen")
+    ]
+    assert found == [
+        (5, "payment_method"),
+        (6, "payment_method"),
+        (7, "payment_method"),
+        (8, "transfers"),
+        (9, "transfer_duration"),
+        (10, "ic_price"),
+        (11, "price"),
+    ]
+    assert "半角の 1" in values.fare_value_problem("payment_method", "１")[1]
+    # columns that are not there are not reported (structure checks cover missing columns)
+    bare = make_feed(fare_attributes="fare_id,price,currency_type\nA,200,JPY\n")
+    assert "bad-fare-value" not in codes(values.fares(bare))

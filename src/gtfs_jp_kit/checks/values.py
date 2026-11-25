@@ -312,8 +312,78 @@ def urls(feed: Feed) -> Iterator[Finding]:
                     )
 
 
+#: fare_attributes.txt enum fields -> allowed values (GTFS-JP v4 fare_attributes.txt).
+#: An empty ``transfers`` means unlimited transfers (§4.14), so "" is allowed there.
+FARE_ENUMS: dict[str, tuple[str, ...]] = {
+    "payment_method": ("0", "1"),
+    "transfers": ("", "0", "1", "2"),
+}
+
+
+def fare_value_problem(field: str, value: str) -> tuple[str, str] | None:
+    """Why a fare_attributes.txt value is invalid, as (en, ja), or None.
+
+    Covers the enums ``payment_method`` (0 / 1, 必須) and ``transfers``
+    (empty / 0 / 1 / 2), ``transfer_duration`` (non-negative seconds) and
+    ``ic_price`` (whole yen, or -1 when the IC fare does not apply).
+
+    >>> fare_value_problem("transfers", "") is None
+    True
+    >>> fare_value_problem("transfers", "３")[0]
+    'transfers must be empty (unlimited), 0, 1 or 2 (found "３")'
+    >>> fare_value_problem("transfers", "２")[1]
+    'transfers は空（無制限）・0・1・2 のいずれかです（現在「２」）（半角の 2 にしてください）'
+    """
+    if field in FARE_ENUMS:
+        if value in FARE_ENUMS[field]:
+            return None
+        hint, hint_ja = "", ""
+        half = unicodedata.normalize("NFKC", value)
+        if half != value and half in FARE_ENUMS[field]:
+            hint, hint_ja = f" (use half-width {half})", f"（半角の {half} にしてください）"
+        if field == "payment_method":
+            return (
+                "payment_method must be 0 (pay after boarding, to the driver or fare box) "
+                f'or 1 (pay before boarding) (found "{value}")' + hint,
+                "payment_method は 0（乗車後に運転手・運賃箱等に支払う）か"
+                f"1（乗車前に窓口・券売機等で支払う）を設定します（現在「{value}」）" + hint_ja,
+            )
+        return (
+            f'transfers must be empty (unlimited), 0, 1 or 2 (found "{value}")' + hint,
+            f"transfers は空（無制限）・0・1・2 のいずれかです（現在「{value}」）" + hint_ja,
+        )
+    if not value:
+        return None
+    if field == "transfer_duration" and not re.fullmatch(r"[0-9]+", value):
+        return (
+            f'transfer_duration must be a whole number of seconds (found "{value}")',
+            f"transfer_duration は秒数（0 以上の整数）で設定します（現在「{value}」）",
+        )
+    if field == "ic_price" and not re.fullmatch(r"-1|[0-9]+(\.0+)?", value):
+        return (
+            f'ic_price must be whole yen, or -1 when no IC fare applies (found "{value}")',
+            f"ic_price は円の整数か、IC 運賃が適用されない場合は -1 です（現在「{value}」）",
+        )
+    return None
+
+
 def fares(feed: Feed) -> Iterator[Finding]:
-    for line, row in feed["fare_attributes"].with_lines():
+    table = feed["fare_attributes"]
+    checked = [f for f in (*FARE_ENUMS, "transfer_duration", "ic_price") if f in table.columns]
+    for line, row in table.with_lines():
+        for field in checked:
+            problem = fare_value_problem(field, row.get(field, ""))
+            if problem:
+                yield Finding(
+                    "bad-fare-value",
+                    "error",
+                    problem[0],
+                    problem[1],
+                    file="fare_attributes.txt",
+                    line=line,
+                    field=field,
+                    spec="fare_attributes.txt",
+                )
         cur = row.get("currency_type", "")
         if cur and cur != "JPY":
             yield Finding(
@@ -326,7 +396,7 @@ def fares(feed: Feed) -> Iterator[Finding]:
                 field="currency_type",
             )
         price = row.get("price", "")
-        if cur == "JPY" and price and not re.fullmatch(r"\d+(\.0+)?", price):
+        if cur == "JPY" and price and not re.fullmatch(r"[0-9]+(\.0+)?", price):
             yield Finding(
                 "fare-price-yen",
                 "error",

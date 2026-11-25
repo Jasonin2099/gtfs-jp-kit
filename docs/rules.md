@@ -68,7 +68,8 @@ same in both profiles.
 | `bad-color` | error | colors are 6 hex digits without `#` |
 | `route-color-contrast` | warning | route_color / route_text_color contrast is below 3:1 |
 | `fare-currency` | warning | currency_type is `JPY` |
-| `fare-price-yen` | error | JPY prices are whole numbers |
+| `fare-price-yen` | error | JPY prices are whole numbers (half-width digits) |
+| `bad-fare-value` | error | payment_method is 0 (pay after boarding, on board) or 1 (pay before boarding, at a counter or machine) — not the bus 前払い / 後払い distinction; transfers is empty (unlimited), 0, 1 or 2; transfer_duration is whole seconds; ic_price is whole yen or -1 (fare_attributes.txt, §4.14). Full-width digits get a half-width hint |
 | `zone-id-missing` | error | fare_rules.txt uses zones but stops have no zone_id |
 
 ## References

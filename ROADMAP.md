@@ -16,7 +16,7 @@ Small, self-contained items. Each one should be a single pull request with tests
 - [ ] translations.txt: English stop names that look translated instead of romanized (e.g. "Primary school")
 - [ ] routes.txt: jp_parent_route_id usage notes (v3 vs v4 meaning)
 - [x] trips.txt: jp_trip_desc_symbol set without jp_trip_desc
-- [ ] fare_attributes.txt: payment_method / transfers enum values
+- [x] fare_attributes.txt: payment_method / transfers enum values (also transfer_duration, ic_price)
 - [x] fare_rules.txt: references to unknown fare_id / route_id / zone
 - [ ] calendar_dates.txt: national holidays not handled when weekday service runs on them
 - [ ] feed_info.txt: feed_version format `YYYY.MM.DD_vN` hint
