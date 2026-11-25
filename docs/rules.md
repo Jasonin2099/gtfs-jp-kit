@@ -71,6 +71,9 @@ same in both profiles.
 | `fare-price-yen` | error | JPY prices are whole numbers (half-width digits) |
 | `bad-fare-value` | error | payment_method is 0 (pay after boarding, on board) or 1 (pay before boarding, at a counter or machine) — not the bus 前払い / 後払い distinction; transfers is empty (unlimited), 0, 1 or 2; transfer_duration is whole seconds; ic_price is whole yen or -1 (fare_attributes.txt, §4.14). Full-width digits get a half-width hint |
 | `zone-id-missing` | error | fare_rules.txt uses zones but stops have no zone_id |
+| `platform-code-words` | warning | platform_code contains 「番線」「のりば」 or similar words; set only the number, letter or sign (stops.txt [国際]). The message suggests the value without them |
+| `platform-code-full-width` | info | platform_code is full-width alphanumerics. Not a spec rule: a hint, since the spec examples and route planners use half-width |
+| `stop-name-platform` | warning | the stop_name of a platform (location_type 0 or empty) contains a platform number such as 「1番のりば」「のりばA」「3番線」; it belongs in platform_code (stops.txt [Google]). Parenthesised sub-names like 「博多駅(JR)」 are not flagged |
 
 ## References
 

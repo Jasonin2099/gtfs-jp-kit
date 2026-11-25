@@ -28,6 +28,7 @@ CHECKS: list[Check] = [
     values.feed_info,
     values.agency,
     values.urls,
+    values.stops,
     values.routes,
     values.fares,
     translations.structure,

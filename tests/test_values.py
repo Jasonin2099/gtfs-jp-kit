@@ -144,3 +144,38 @@ def test_fare_values(make_feed):
     # columns that are not there are not reported (structure checks cover missing columns)
     bare = make_feed(fare_attributes="fare_id,price,currency_type\nA,200,JPY\n")
     assert "bad-fare-value" not in codes(values.fares(bare))
+
+
+def test_platform_code_and_stop_name(make_feed):
+    head = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,platform_code\n"
+    rows = [
+        "A,東西駅前,36.1,138.2,0,P,1",
+        "B,東西駅前,36.1,138.2,0,P,センタービル前",  # allowed by the spec [JP]
+        "C,東西駅前,36.1,138.2,0,P,1番のりば",
+        "D,東西駅前,36.1,138.2,0,P,3番線",
+        "E,東西駅前,36.1,138.2,0,P,のりばA",
+        "F,東西駅前,36.1,138.2,0,P,２",  # full-width
+        "G,東西駅前 1番のりば,36.1,138.2,0,P,",
+        "H,東西駅前（2番）,36.1,138.2,0,P,",
+        "I,博多駅(JR),36.1,138.2,0,P,",  # sub-name, fine
+        "J,バスのりば,36.1,138.2,0,P,",  # no number, fine
+        "K,東西駅 3番線,36.1,138.2,,P,",
+        "P,東西駅 のりばB,36.1,138.2,1,,",  # station: name not checked
+    ]
+    found = [(f.line, f.code) for f in values.stops(make_feed(stops=head + "\n".join(rows) + "\n"))]
+    assert found == [
+        (4, "platform-code-words"),
+        (5, "platform-code-words"),
+        (6, "platform-code-words"),
+        (7, "platform-code-full-width"),
+        (8, "stop-name-platform"),
+        (9, "stop-name-platform"),
+        (12, "stop-name-platform"),
+    ]
+    msgs = {f.line: f for f in values.stops(make_feed(stops=head + "\n".join(rows) + "\n"))}
+    assert '("1")' in msgs[4].message and "「3」" in msgs[5].message_ja
+    assert values.platform_code_fix("Platform 2") == "2"
+
+
+def test_fixture_stops_clean(tozai):
+    assert list(values.stops(tozai)) == []

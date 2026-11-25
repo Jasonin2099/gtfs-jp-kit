@@ -207,6 +207,77 @@ def phone_problem(value: str) -> tuple[str, str] | None:
     return None
 
 
+#: Words that GTFS-JP says must not be part of platform_code (「番線」「のりば」等).
+_PLATFORM_WORDS = re.compile(r"番線|番のりば|番乗り?場|のりば|乗り?場|番ホーム|platform", re.I)
+_ALNUM = r"[0-9A-Za-z０-９Ａ-Ｚａ-ｚ]"
+#: A platform number inside a stop_name: 「1番のりば」「のりばA」「3番線」「(2番)」.
+#: Plain parentheses such as 「博多駅(JR)」 are sub-names and are not matched.
+_NAME_PLATFORM = re.compile(
+    rf"{_ALNUM}+\s*(?:番?\s*(?:のりば|乗り?場)|番線)|(?:のりば|乗り?場)\s*{_ALNUM}+"
+    r"|[(（][0-9０-９]+番[)）]"
+)
+
+
+def platform_code_fix(value: str) -> str:
+    """``value`` with the words GTFS-JP forbids in platform_code removed.
+
+    >>> platform_code_fix("1番のりば")
+    '1'
+    >>> platform_code_fix("のりばA")
+    'A'
+    >>> platform_code_fix("センタービル前")
+    'センタービル前'
+    """
+    return _PLATFORM_WORDS.sub("", value).strip(" 　-")
+
+
+def stops(feed: Feed) -> Iterator[Finding]:
+    table = feed["stops"]
+    for line, row in table.with_lines():
+        code = row.get("platform_code", "")
+        if code and _PLATFORM_WORDS.search(code):
+            fixed = platform_code_fix(code)
+            yield Finding(
+                "platform-code-words",
+                "warning",
+                f'platform_code "{code}" contains words like 番線 / のりば; set only the '
+                f'number or letter ("{fixed}")',
+                f"platform_code「{code}」に「番線」「のりば」等の語が含まれています。"
+                f"番号・英字だけを設定します（「{fixed}」）",
+                file="stops.txt",
+                line=line,
+                field="platform_code",
+                spec="stops.txt",
+            )
+        elif code and unicodedata.normalize("NFKC", code) != code and code.isalnum():
+            half = unicodedata.normalize("NFKC", code)
+            yield Finding(
+                "platform-code-full-width",
+                "info",
+                f'platform_code "{code}" is full-width; half-width "{half}" matches the '
+                "spec examples and what route planners show",
+                f"platform_code「{code}」が全角です。半角（「{half}」）を推奨します",
+                file="stops.txt",
+                line=line,
+                field="platform_code",
+                spec="stops.txt",
+            )
+        name = row.get("stop_name", "")
+        if row.get("location_type", "") in ("", "0") and (m := _NAME_PLATFORM.search(name)):
+            yield Finding(
+                "stop-name-platform",
+                "warning",
+                f'stop_name "{name}" contains a platform number ("{m.group(0)}"); '
+                "put it in platform_code and keep the stop name only",
+                f"stop_name「{name}」に乗り場番号（「{m.group(0)}」）が含まれています。"
+                "乗り場番号は platform_code に設定します",
+                file="stops.txt",
+                line=line,
+                field="stop_name",
+                spec="stops.txt",
+            )
+
+
 def routes(feed: Feed) -> Iterator[Finding]:
     for line, row in feed["routes"].with_lines():
         color, text = row.get("route_color", ""), row.get("route_text_color", "")
