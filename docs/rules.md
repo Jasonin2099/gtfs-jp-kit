@@ -57,6 +57,7 @@ same in both profiles.
 | `feed-lang-not-ja` | error | feed_lang is `ja` |
 | `bad-date` | error | feed_start_date / feed_end_date are YYYYMMDD |
 | `feed-period-reversed` | error | feed_start_date ≤ feed_end_date |
+| `feed-version-no-date` | info | feed_version contains no date; the spec recommends combining the ダイヤ改正日 (YYYYMMDD) with a management code, version etc. (例「20250401_0003」) [JP]. Not a format rule: any value with a date passes (20250401, 2025/03/30, 2025.04.01, 2025年4月1日, 令和7年4月1日) |
 | `service-outside-feed-period` | warning | a calendar.txt service does not overlap the feed validity period |
 | `agency-timezone` | warning | agency_timezone is `Asia/Tokyo` |
 | `agency-lang` | warning | agency_lang is `ja` |

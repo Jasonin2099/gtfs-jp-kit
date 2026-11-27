@@ -19,7 +19,7 @@ Small, self-contained items. Each one should be a single pull request with tests
 - [x] fare_attributes.txt: payment_method / transfers enum values (also transfer_duration, ic_price)
 - [x] fare_rules.txt: references to unknown fare_id / route_id / zone
 - [ ] calendar_dates.txt: national holidays not handled when weekday service runs on them
-- [ ] feed_info.txt: feed_version format `YYYY.MM.DD_vN` hint
+- [x] feed_info.txt: feed_version without a date (info; the spec recommends ダイヤ改正日 + 管理コード, e.g. `20250401_0003`, not a fixed format)
 - [ ] Fares V2 (任意): minimal referential checks for fare_products / fare_leg_rules
 - [ ] Flex (任意): note that Google 乗換案内 does not accept Flex files (as of 2025-12)
 - [ ] `--select` to run only some rule groups

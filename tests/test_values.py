@@ -17,10 +17,37 @@ def test_corporate_numbers():
 
 
 def test_feed_lang_and_period(make_feed):
-    feed = make_feed(feed_info=INFO_HEAD + "X,https://example.jp,en,20270101,20260101,1\n")
+    feed = make_feed(feed_info=INFO_HEAD + "X,https://example.jp,en,20270101,20260101,20270101_1\n")
     assert codes(values.feed_info(feed)) == ["feed-lang-not-ja", "feed-period-reversed"]
-    later = make_feed(feed_info=INFO_HEAD + "X,https://example.jp,ja,20280101,20281231,1\n")
+    later = make_feed(
+        feed_info=INFO_HEAD + "X,https://example.jp,ja,20280101,20281231,20280101_1\n"
+    )
     assert codes(values.feed_info(later)) == ["service-outside-feed-period"] * 3
+
+
+def test_feed_version_date_hint(make_feed):
+    def found(version):
+        feed = make_feed(
+            feed_info=INFO_HEAD + f"X,https://example.jp,ja,20261001,20270331,{version}\n"
+        )
+        return [f for f in values.feed_info(feed) if f.code == "feed-version-no-date"]
+
+    # the spec's own examples (feed_info.txt and §(5)) all carry the revision date
+    for ok in (
+        "20250401_0003",
+        "20250401_0003_20250408修正",
+        "2025/03/30 改正-見える化 ver2.6g",
+        "2025年4月1日改正ダイヤ_2025年4月8日修正",
+        "2026.10.01_v1",
+        "令和7年4月1日改正",
+        "２０２５０４０１",
+    ):
+        assert found(ok) == [], ok
+    [f] = found("ver2")
+    assert f.severity == "info" and f.field == "feed_version" and "20250401_0003" in f.message
+    assert found("2025年度版") and found("20251301")
+    # an empty feed_version is the required-field check's job, not this hint's
+    assert found("") == []
 
 
 def test_bad_date(make_feed):

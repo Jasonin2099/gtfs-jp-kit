@@ -24,6 +24,32 @@ def _date(value: str) -> date | None:
         return None
 
 
+#: A calendar date inside feed_version: 20250401, 2025-04-01, 2025/4/1, 2025.04.01,
+#: 2025年4月1日 (also with spaces, as in the spec's own example), R7.4.1 / 令和7年4月1日.
+_VERSION_DATE = re.compile(
+    r"(?<!\d)(?:19|20)\d{2}(?:(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])(?!\d)"
+    r"|\s*[-/.年]\s*\d{1,2}\s*[-/.月]\s*\d{1,2}(?!\d))"
+    r"|(?:令和|R)\s*\d{1,2}\s*[-/.年]\s*\d{1,2}\s*[-/.月]\s*\d{1,2}(?!\d)"
+)
+
+
+def feed_version_has_date(value: str) -> bool:
+    """True if ``feed_version`` contains a date (the ダイヤ改正日 the spec recommends).
+
+    >>> feed_version_has_date("20250401_0003")
+    True
+    >>> feed_version_has_date("2025 年 4 月 1 日改正ダイヤ_2025 年 4 月 8 日修正")
+    True
+    >>> feed_version_has_date("2025/03/30 改正-見える化 ver2.6g")
+    True
+    >>> feed_version_has_date("ver2")
+    False
+    >>> feed_version_has_date("20251399")
+    False
+    """
+    return bool(_VERSION_DATE.search(unicodedata.normalize("NFKC", value)))
+
+
 def feed_info(feed: Feed) -> Iterator[Finding]:
     table = feed.get("feed_info")
     if table is None:
@@ -48,6 +74,20 @@ def feed_info(feed: Feed) -> Iterator[Finding]:
                 file="feed_info.txt",
                 line=line,
                 field="feed_lang",
+                spec="feed_info.txt",
+            )
+        version = row.get("feed_version", "").strip()
+        if version and not feed_version_has_date(version):
+            yield Finding(
+                "feed-version-no-date",
+                "info",
+                f"feed_version {version!r} has no date; the spec recommends starting with the "
+                "timetable revision date, e.g. 20250401_0003",
+                f"feed_version「{version}」に日付がありません。ダイヤ改正日（YYYYMMDD）と管理コード等の"
+                "組み合わせ（例：20250401_0003）が推奨です",
+                file="feed_info.txt",
+                line=line,
+                field="feed_version",
                 spec="feed_info.txt",
             )
         start = _date(row.get("feed_start_date", ""))
