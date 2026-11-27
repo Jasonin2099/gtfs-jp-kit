@@ -34,6 +34,7 @@ CHECKS: list[Check] = [
     values.fares,
     translations.structure,
     translations.readings,
+    translations.stop_reading_consistency,
     references.attributions,
     references.stop_coordinates,
     references.fare_rules,

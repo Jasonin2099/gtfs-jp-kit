@@ -7,6 +7,7 @@ names 必須 and English 推奨.
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Iterator
 
 from .. import spec
@@ -43,6 +44,30 @@ READING_TARGETS = (
     ("trips", "trip_headsign", "warning"),
     ("stop_times", "stop_headsign", "warning"),
 )
+
+
+#: Half-width katakana and their sound marks (U+FF65–U+FF9F).
+_HALF_KANA = re.compile(r"[\uFF65-\uFF9F]")
+
+
+def half_width_reading_fix(text: str) -> str:
+    """Suggested reading for one written in half-width katakana: hiragana.
+
+    The spec's examples (「しやくしょまえ」「はねだくうこうだいいちたーみなる」) are
+    hiragana; NFKC on the half-width part first turns ｶﾞ into ガ, then
+    katakana become hiragana. Other characters are left alone.
+
+    >>> half_width_reading_fix("ｼﾔｸｼｮﾏｴ")
+    'しやくしょまえ'
+    >>> half_width_reading_fix("ﾄｳｻﾞｲｴｷﾏｴ～ｼﾐﾝﾋﾞｮｳｲﾝ")
+    'とうざいえきまえ～しみんびょういん'
+    """
+    out = []
+    full = re.sub(r"[\uFF65-\uFF9F]+", lambda m: unicodedata.normalize("NFKC", m.group()), text)
+    for ch in full:
+        o = ord(ch)
+        out.append(chr(o - 0x60) if 0x30A1 <= o <= 0x30F6 else ch)
+    return "".join(out)
 
 
 def is_kana_reading(text: str) -> bool:
@@ -188,7 +213,17 @@ def structure(feed: Feed) -> Iterator[Finding]:
                 )
         if row.get("language") == "ja-Hrkt":
             text = row.get("translation", "")
-            if text and not is_kana_reading(text):
+            if text and _HALF_KANA.search(text):
+                fix = half_width_reading_fix(text)
+                yield Finding(
+                    "reading-half-width-kana",
+                    "info",
+                    f"ja-Hrkt reading {text!r} uses half-width katakana; suggest {fix!r}",
+                    f"読み仮名「{text}」に半角カナがあります。「{fix}」を推奨します（50音検索用）",
+                    field="translation",
+                    **f,
+                )
+            if text and not is_kana_reading(half_width_reading_fix(text)):
                 yield Finding(
                     "reading-not-kana",
                     "warning",
@@ -246,3 +281,86 @@ def readings(feed: Feed, profile: spec.Profile | str | None = None) -> Iterator[
                 field=field_name,
                 spec="translations.txt",
             )
+
+
+def _stop_readings(feed: Feed) -> tuple[dict[str, str], dict[str, str]]:
+    """ja-Hrkt readings of stops.stop_name, by stop_id and by field_value."""
+    by_id: dict[str, str] = {}
+    by_value: dict[str, str] = {}
+    for row in feed["translations"]:
+        if (row.get("table_name"), row.get("field_name"), row.get("language")) != (
+            "stops",
+            "stop_name",
+            "ja-Hrkt",
+        ):
+            continue
+        text = row.get("translation", "")
+        if not text:
+            continue
+        if row.get("record_id"):
+            by_id.setdefault(row["record_id"], text)
+        elif row.get("field_value"):
+            by_value.setdefault(row["field_value"], text)
+    return by_id, by_value
+
+
+def stop_reading_consistency(feed: Feed) -> Iterator[Finding]:
+    """The same stop_name read in more than one way.
+
+    Readings are what Japanese journey planners use for 50音 search, so the
+    platforms of one station should share one reading. Different places with
+    the same written name can legitimately be read differently (同名異読), so
+    that case is only a hint.
+    """
+    if not feed.has("translations") or not feed.has("stops"):
+        return
+    by_id, by_value = _stop_readings(feed)
+    if not by_id:  # readings by field_value alone cannot disagree for one name
+        return
+    #: stop_name -> reading -> [(line, stop_id, station group)]
+    names: dict[str, dict[str, list[tuple[int, str, str]]]] = {}
+    for line, row in feed["stops"].with_lines():
+        if row.get("location_type", "") not in ("", "0", "1"):
+            continue
+        name, sid = row.get("stop_name", ""), row.get("stop_id", "")
+        reading = by_id.get(sid) or by_value.get(name, "")
+        if not name or not reading:
+            continue
+        group = sid if row.get("location_type") == "1" else (row.get("parent_station") or sid)
+        names.setdefault(name, {}).setdefault(reading, []).append((line, sid, group))
+    for name, readings_ in names.items():
+        if len(readings_) < 2:
+            continue
+        groups = [{g for _, _, g in rows} for rows in readings_.values()]
+        same_station = any(a & b for i, a in enumerate(groups) for b in groups[i + 1 :])
+        first_line = min(line for rows in readings_.values() for line, _, _ in rows)
+        listed = "、".join(
+            f"「{r}」({', '.join(sid for _, sid, _ in rows[:3])}{', …' if len(rows) > 3 else ''})"
+            for r, rows in readings_.items()
+        )
+        listed_en = "; ".join(
+            f"{r!r} ({', '.join(sid for _, sid, _ in rows[:3])}{', ...' if len(rows) > 3 else ''})"
+            for r, rows in readings_.items()
+        )
+        if same_station:
+            en = f"stop_name {name!r} has different readings within one station: {listed_en}"
+            ja = f"同じ駅・停留所内で「{name}」の読み仮名が異なります：{listed}"
+        else:
+            en = (
+                f"stop_name {name!r} is read differently at different stops: {listed_en} "
+                "(fine if these are different places read differently)"
+            )
+            ja = (
+                f"「{name}」の読み仮名が停留所によって異なります：{listed}"
+                "（別の場所で読みが違うなら問題ありません）"
+            )
+        yield Finding(
+            "reading-varies",
+            "warning" if same_station else "info",
+            en,
+            ja,
+            file="stops.txt",
+            line=first_line,
+            field="stop_name",
+            spec="translations.txt",
+        )

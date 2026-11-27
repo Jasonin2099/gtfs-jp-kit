@@ -76,3 +76,61 @@ def test_duplicate_primary_key(make_feed):
     assert "異なる" in dups[1].message_ja
     # the duplicate row is reported once, not checked again
     assert codes(found) == ["translation-duplicate", "translation-duplicate"]
+
+
+def test_half_width_kana_reading(make_feed):
+    rows = (
+        "stops,stop_name,ja-Hrkt,ｼﾔｸｼｮﾏｴ,,,市役所前\n"
+        "stops,stop_name,ja-Hrkt,ｼﾐﾝ病院,,,市民病院\n"  # half-width and kanji
+    )
+    found = list(translations.structure(make_feed(translations=HEAD + rows)))
+    hw = [f for f in found if f.code == "reading-half-width-kana"]
+    assert [f.severity for f in hw] == ["info", "info"]
+    assert "'しやくしょまえ'" in hw[0].message and "「しやくしょまえ」" in hw[0].message_ja
+    # pure half-width katakana is still kana: no reading-not-kana on top
+    assert [f.line for f in found if f.code == "reading-not-kana"] == [3]
+    assert translations.half_width_reading_fix("ﾊﾞｽﾀｰﾐﾅﾙ") == "ばすたーみなる"
+    # full-width katakana readings are fine (ja-Hrkt = hiragana + katakana)
+    ok = HEAD + "stops,stop_name,ja-Hrkt,シヤクショマエ,,,市役所前\n"
+    assert list(translations.structure(make_feed(translations=ok))) == []
+
+
+STOPS = (
+    "stop_id,stop_name,stop_lat,stop_lon,zone_id,location_type,parent_station,platform_code\n"
+    "ST_EKI,東西駅前,36.1000,138.2500,,1,,\n"
+    "ST_EKI_1,東西駅前,36.1001,138.2501,Z1,0,ST_EKI,1\n"
+    "ST_EKI_2,東西駅前,36.1002,138.2502,Z1,0,ST_EKI,2\n"
+    "ST_SHI,市役所前,36.1050,138.2550,Z1,0,,\n"
+    "ST_SHI_N,市役所前,36.2050,138.3550,Z1,0,,\n"
+    "ST_BYO,市民病院,36.1100,138.2600,Z1,0,,\n"
+    "ST_DAN,みどり団地,34.3950,138.2400,Z1,0,,\n"
+)
+
+
+def test_reading_varies(make_feed):
+    rows = (
+        "stops,stop_name,ja-Hrkt,とうざいえきまえ,,,東西駅前\n"
+        "stops,stop_name,ja-Hrkt,とうざいえき,ST_EKI_2,,\n"  # one platform differs
+        "stops,stop_name,ja-Hrkt,しやくしょまえ,,,市役所前\n"
+        "stops,stop_name,ja-Hrkt,しやくしょまい,ST_SHI_N,,\n"  # another place, other reading
+    )
+    feed = make_feed(stops=STOPS, translations=HEAD + rows)
+    found = list(translations.stop_reading_consistency(feed))
+    by_name = {f.message.split("'")[1]: f for f in found}
+    assert set(by_name) == {"東西駅前", "市役所前"}
+    eki, shi = by_name["東西駅前"], by_name["市役所前"]
+    assert eki.severity == "warning" and "within one station" in eki.message
+    assert "「とうざいえき」(ST_EKI_2)" in eki.message_ja and eki.line == 2
+    assert shi.severity == "info" and "different places" in shi.message
+
+
+def test_reading_varies_quiet_cases(tozai, make_feed):
+    assert list(translations.stop_reading_consistency(tozai)) == []
+    # same reading given by record_id and by field_value: no finding
+    rows = (
+        "stops,stop_name,ja-Hrkt,とうざいえきまえ,,,東西駅前\n"
+        "stops,stop_name,ja-Hrkt,とうざいえきまえ,ST_EKI_1,,\n"
+    )
+    feed = make_feed(stops=STOPS, translations=HEAD + rows)
+    assert list(translations.stop_reading_consistency(feed)) == []
+    assert list(translations.stop_reading_consistency(make_feed(translations=None))) == []

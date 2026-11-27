@@ -10,9 +10,9 @@ Small, self-contained items. Each one should be a single pull request with tests
 - [x] agency_phone: Japanese phone number format (half-width, digit count; missing hyphens are info per §4.13; also attribution_phone)
 - [x] stops.txt: platform_code without 番線 / のりば words, half-width hint; stop_name without platform numbers
 - [x] stops.txt: coordinates inside Japan's bounding box (catch swapped lat/lon)
-- [ ] stops.txt: same stop_name with different readings across rows
+- [x] stops.txt: same stop_name with different readings across rows (warning within one station, info elsewhere)
 - [x] translations.txt: duplicate primary keys
-- [ ] translations.txt: half-width katakana in readings (warn, suggest hiragana)
+- [x] translations.txt: half-width katakana in readings (info, suggests hiragana; not a spec rule)
 - [ ] translations.txt: English stop names that look translated instead of romanized (e.g. "Primary school")
 - [ ] routes.txt: jp_parent_route_id usage notes (v3 vs v4 meaning)
 - [x] trips.txt: jp_trip_desc_symbol set without jp_trip_desc

@@ -99,6 +99,8 @@ same in both profiles.
 | `translation-unknown-record` | error | record_id does not exist in the target file |
 | `translation-unused-value` | warning | no row matches field_value exactly, so the translation never applies |
 | `reading-not-kana` | warning | a `ja-Hrkt` reading contains kanji, digits or Latin letters |
+| `reading-half-width-kana` | info | a `ja-Hrkt` reading uses half-width katakana (ｼﾔｸｼｮ); the message suggests the hiragana form the spec's examples use. Hint only: the spec has no rule on half-width kana, and full-width katakana readings are not flagged |
+| `reading-varies` | warning / info | one stop_name has different ja-Hrkt readings (readings drive 50音 search). Warning when the stops belong to one station (same parent_station), info otherwise, since different places with the same name can be read differently |
 | `reading-missing` | error / warning | a Japanese name has no `ja-Hrkt` reading (error for stop_name, warning for agency, route, headsign names) |
 | `english-missing` | info | names without an English (`en`) translation, which is 推奨 |
 
