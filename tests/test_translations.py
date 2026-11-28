@@ -1,4 +1,5 @@
 from gtfs_jp_kit.checks import translations
+from gtfs_jp_kit.checks.translations import translated_wordings
 
 HEAD = "table_name,field_name,language,translation,record_id,record_sub_id,field_value\n"
 
@@ -134,3 +135,37 @@ def test_reading_varies_quiet_cases(tozai, make_feed):
     feed = make_feed(stops=STOPS, translations=HEAD + rows)
     assert list(translations.stop_reading_consistency(feed)) == []
     assert list(translations.stop_reading_consistency(make_feed(translations=None))) == []
+
+
+def test_english_name_translated(make_feed):
+    stops = STOPS + "ST_SHO,みどり小学校前,36.1200,138.2700,Z1,0,,\n"
+    rows = (
+        "stops,stop_name,en,Midori Primary School,,,みどり小学校前\n"  # by field_value
+        "stops,stop_name,en,Municipal Hospital,ST_BYO,,\n"  # by record_id
+        "stops,stop_name,en,City Hall,ST_SHI,,\n"
+        "stops,stop_name,en,Tozai Station,,,東西駅前\n"  # Station is fine
+        "stops,stop_name,ja-Hrkt,しやくしょまえ,,,市役所前\n"  # not English
+        "routes,route_long_name,en,City Hospital Line,R1,,\n"  # not a stop name
+    )
+    feed = make_feed(stops=stops, translations=HEAD + rows)
+    found = list(translations.stop_english_names(feed))
+    assert [(f.line, f.severity) for f in found] == [(2, "info"), (3, "info"), (4, "info")]
+    assert "小学校 -> 'Primary School' (spec: Shogakko)" in found[0].message
+    assert "Byoin" in found[1].message and "Shiyakusho" in found[2].message
+    assert "「小学校」" in found[0].message_ja and "意訳" in found[0].message_ja
+
+
+def test_english_name_translated_quiet_cases(tozai, make_feed):
+    assert list(translations.stop_english_names(tozai)) == []
+    assert list(translations.stop_english_names(make_feed(translations=None))) == []
+    rows = (
+        "stops,stop_name,en,Midori Shogakko-mae,,,みどり小学校前\n"
+        "stops,stop_name,en,Shogakko Elementary School,,,みどり小学校前\n"  # romaji present
+        "stops,stop_name,en,Primary School,,,バス停\n"  # no Japanese word to match
+    )
+    assert list(translations.stop_english_names(make_feed(translations=HEAD + rows))) == []
+
+
+def test_translated_wordings_several():
+    got = translated_wordings("市役所前公園", "City Office Park")
+    assert [(t, w) for t, w, _ in got] == [("市役所", "City Office"), ("公園", "Park")]

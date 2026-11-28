@@ -101,6 +101,7 @@ same in both profiles.
 | `reading-not-kana` | warning | a `ja-Hrkt` reading contains kanji, digits or Latin letters |
 | `reading-half-width-kana` | info | a `ja-Hrkt` reading uses half-width katakana (ｼﾔｸｼｮ); the message suggests the hiragana form the spec's examples use. Hint only: the spec has no rule on half-width kana, and full-width katakana readings are not flagged |
 | `reading-varies` | warning / info | one stop_name has different ja-Hrkt readings (readings drive 50音 search). Warning when the stops belong to one station (same parent_station), info otherwise, since different places with the same name can be read differently |
+| `english-name-translated` | info | an English (`en`) stop_name translates a word instead of romanizing it (小学校 → "Primary School" rather than Shogakko). The spec's note under translations.txt asks for romaji that matches the announcements, so the message gives the romaji; it is only a hint because the stop sign or English announcement may use the translated wording. Checked for 小学校, 中学校, 高校, 大学, 市役所, 役場, 病院, 郵便局, 公園, 神社, 図書館, 公民館, 体育館, 交差点, 入口, 団地; 駅 is not checked ("Station" is usual) |
 | `reading-missing` | error / warning | a Japanese name has no `ja-Hrkt` reading (error for stop_name, warning for agency, route, headsign names) |
 | `english-missing` | info | names without an English (`en`) translation, which is 推奨 |
 
