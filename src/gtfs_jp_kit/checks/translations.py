@@ -283,6 +283,99 @@ def readings(feed: Feed, profile: spec.Profile | str | None = None) -> Iterator[
             )
 
 
+#: Japanese word in a stop name -> (romaji the spec asks for, English wordings that
+#: translate it instead). 駅 is left out on purpose: "Station" is how most
+#: operators write it in English.
+ENGLISH_WORDINGS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    ("小学校", "Shogakko", ("Primary School", "Elementary School")),
+    ("中学校", "Chugakko", ("Junior High School", "Middle School", "Junior High")),
+    ("高等学校", "Kotogakko", ("High School",)),
+    ("高校", "Koko", ("High School",)),
+    ("大学", "Daigaku", ("University",)),
+    ("市役所", "Shiyakusho", ("City Hall", "City Office")),
+    ("役場", "Yakuba", ("Town Hall", "Town Office", "Village Hall", "Village Office")),
+    ("病院", "Byoin", ("Hospital",)),
+    ("郵便局", "Yubinkyoku", ("Post Office",)),
+    ("公園", "Koen", ("Park",)),
+    ("神社", "Jinja", ("Shrine",)),
+    ("図書館", "Toshokan", ("Library",)),
+    ("公民館", "Kominkan", ("Community Center", "Community Centre")),
+    ("体育館", "Taiikukan", ("Gymnasium",)),
+    ("交差点", "Kosaten", ("Intersection", "Crossing")),
+    ("入口", "Iriguchi", ("Entrance",)),
+    ("団地", "Danchi", ("Housing Complex", "Housing Estate")),
+)
+_ENGLISH_WORDING_RES = tuple(
+    (term, romaji, re.compile(r"\b(?:" + "|".join(map(re.escape, words)) + r")\b", re.I))
+    for term, romaji, words in ENGLISH_WORDINGS
+)
+
+
+def translated_wordings(ja: str, en: str) -> list[tuple[str, str, str]]:
+    """Words of a Japanese stop name that its English name translates, not romanizes.
+
+    Returns ``(Japanese word, English wording used, romaji the spec asks for)``.
+    A name that already contains the romaji (Shogakko Primary School) is left alone.
+
+    >>> translated_wordings("みどり小学校前", "Midori Primary School")
+    [('小学校', 'Primary School', 'Shogakko')]
+    >>> translated_wordings("みどり小学校前", "Midori Shogakko-mae")
+    []
+    >>> translated_wordings("市民病院", "City Hospital")
+    [('病院', 'Hospital', 'Byoin')]
+    """
+    flat = re.sub(r"[\s'-]", "", en.lower())
+    found = []
+    for term, romaji, pattern in _ENGLISH_WORDING_RES:
+        if term not in ja or romaji.lower() in flat:
+            continue
+        m = pattern.search(en)
+        if m:
+            found.append((term, m.group(), romaji))
+    return found
+
+
+def stop_english_names(feed: Feed) -> Iterator[Finding]:
+    """English stop names that translate a word instead of romanizing it.
+
+    GTFS-JP asks for romaji that matches the announcements ("小学校" is
+    "Shogakko", not "Primary School"), unless the stop sign or the English
+    announcement uses the translated wording. The operator may have such
+    wording, so this is only a hint.
+    """
+    if not feed.has("translations") or not feed.has("stops"):
+        return
+    names = {r.get("stop_id", ""): r.get("stop_name", "") for r in feed["stops"]}
+    for line, row in feed["translations"].with_lines():
+        if (row.get("table_name"), row.get("field_name"), row.get("language")) != (
+            "stops",
+            "stop_name",
+            "en",
+        ):
+            continue
+        text = row.get("translation", "")
+        ja = row.get("field_value") or names.get(row.get("record_id", ""), "")
+        hits = translated_wordings(ja, text) if text and ja else []
+        if not hits:
+            continue
+        en_list = "; ".join(f"{t} -> {w!r} (spec: {r})" for t, w, r in hits)
+        ja_list = "、".join(f"「{t}」→ {w!r}（{r} とする）" for t, w, r in hits)
+        yield Finding(
+            "english-name-translated",
+            "info",
+            f"English name {text!r} of {ja!r} translates instead of romanizing: {en_list}. "
+            "The spec asks for romaji that matches the announcements, unless the stop sign "
+            "or English announcement uses this wording",
+            f"「{ja}」の英語表記 {text!r} は、ローマ字でなく意訳になっています：{ja_list}。"
+            "仕様は車内放送等と一致するローマ字表記を求めます"
+            "（停留所の表示や英語の車内放送がその表記なら問題ありません）",
+            file="translations.txt",
+            line=line,
+            field="translation",
+            spec="translations.txt",
+        )
+
+
 def _stop_readings(feed: Feed) -> tuple[dict[str, str], dict[str, str]]:
     """ja-Hrkt readings of stops.stop_name, by stop_id and by field_value."""
     by_id: dict[str, str] = {}

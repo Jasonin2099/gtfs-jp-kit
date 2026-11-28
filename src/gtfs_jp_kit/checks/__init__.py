@@ -35,6 +35,7 @@ CHECKS: list[Check] = [
     translations.structure,
     translations.readings,
     translations.stop_reading_consistency,
+    translations.stop_english_names,
     references.attributions,
     references.stop_coordinates,
     references.fare_rules,
