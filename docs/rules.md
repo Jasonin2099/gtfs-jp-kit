@@ -116,3 +116,30 @@ same in both profiles.
 | `office-jp-name` | error | office_jp.office_name is required |
 | `trip-unknown-office` | error | trips.jp_office_id is not in office_jp.txt |
 | `trip-unknown-pattern` | warning | trips.jp_pattern_id is not in pattern_jp.txt (only when that file exists) |
+
+## Notes
+
+### routes.txt: jp_parent_route_id (v1/v2 vs v3/v4 meaning) / jp_parent_route_id の意味の違い
+
+No check reads `jp_parent_route_id` for its meaning, because a value alone cannot
+tell which edition it was written for. The field changed its role, so keep this
+in mind when you read a feed, and when `v1-legacy-file`
+points you at it (GTFS-JP 第 4.0 版, routes.txt 補足 6):
+
+| What the row describes | First / second edition | Third edition and this spec (v4) |
+|---|---|---|
+| A route per via or short-turn variant (経由違いや途中止まりを別々に設定した経路) | `route_id` | `jp_pattern_id` (in trips.txt) |
+| A line that groups the variants of one line name (路線名が同じなら経由違いや途中止まりをまとめた路線) | `jp_parent_route_id` | `route_id` |
+| A direction or area that groups lines (路線をまとめた方面等) | none | `jp_parent_route_id` |
+
+In v4 `jp_parent_route_id` is optional, a [JP] extension, and the value is an ID
+you make up for the direction, or the direction name itself; bus on-board units
+show it as the name that bundles routes (e.g. a 方面 name). The older wording
+("the parent of the route: a line ID or line name") was the same in the second
+and third editions even though the meaning had changed, and the 4.0 spec
+rewrote it.
+
+So a feed that still puts a line ID in `jp_parent_route_id` and splits one line
+into several `route_id` values by via is written in the older meaning; in v4
+those variants are one `route_id` with different `jp_pattern_id` values in
+trips.txt.

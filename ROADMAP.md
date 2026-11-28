@@ -14,7 +14,7 @@ Small, self-contained items. Each one should be a single pull request with tests
 - [x] translations.txt: duplicate primary keys
 - [x] translations.txt: half-width katakana in readings (info, suggests hiragana; not a spec rule)
 - [x] translations.txt: English stop names that look translated instead of romanized (e.g. "Primary school"; info, a fixed list of words)
-- [ ] routes.txt: jp_parent_route_id usage notes (v3 vs v4 meaning)
+- [x] routes.txt: jp_parent_route_id usage notes (v1/v2 vs v3/v4 meaning; a note in docs/rules.md, no check, since a value alone does not show which edition it was written for)
 - [x] trips.txt: jp_trip_desc_symbol set without jp_trip_desc
 - [x] fare_attributes.txt: payment_method / transfers enum values (also transfer_duration, ic_price)
 - [x] fare_rules.txt: references to unknown fare_id / route_id / zone
